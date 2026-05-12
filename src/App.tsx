@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { CellScene } from "./components/CellScene";
+import { CellScene, type CellSceneHandle } from "./components/CellScene";
 import { cells, getCellById, type CellItem, type ViewMode } from "./data/cells";
 
 type ModeOption = {
@@ -39,6 +39,27 @@ const modeOptions: ModeOption[] = [
 ];
 
 const initialCell = getCellById("animal");
+
+type ExportAction = "screenshot" | "glb";
+
+function fileSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
 
 function Header({ cell }: { cell: CellItem }) {
   return (
@@ -222,6 +243,46 @@ function Stage({
   onReset,
   onToast,
 }: StageProps) {
+  const sceneRef = useRef<CellSceneHandle>(null);
+  const [exporting, setExporting] = useState<ExportAction | null>(null);
+  const fileBase = fileSlug(cell.name) || "cell-model";
+
+  async function handleScreenshotExport() {
+    if (!sceneRef.current || exporting) {
+      return;
+    }
+
+    setExporting("screenshot");
+    try {
+      const blob = await sceneRef.current.captureScreenshot();
+      downloadBlob(blob, `${fileBase}-studio-view.png`);
+      onToast("Screenshot downloaded.");
+    } catch (error) {
+      console.error(error);
+      onToast("Screenshot export failed.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function handleGlbExport() {
+    if (!sceneRef.current || exporting) {
+      return;
+    }
+
+    setExporting("glb");
+    try {
+      const blob = await sceneRef.current.exportGLB();
+      downloadBlob(blob, `${fileBase}-model.glb`);
+      onToast("GLB model downloaded.");
+    } catch (error) {
+      console.error(error);
+      onToast(error instanceof Error ? error.message : "GLB export failed.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   return (
     <main className="stage-column">
       <section className="stage-panel">
@@ -260,6 +321,7 @@ function Stage({
 
         <div className="canvas-wrap">
           <CellScene
+            ref={sceneRef}
             cell={cell}
             activeOrganelle={activeOrganelle}
             viewMode={viewMode}
@@ -293,13 +355,13 @@ function Stage({
         </div>
 
         <div className="export-toolbar">
-          <button type="button" onClick={() => onToast("截图功能这里先做占位。")}>
+          <button type="button" disabled={exporting !== null} onClick={handleScreenshotExport}>
             <Camera size={20} />
-            Screenshot
+            {exporting === "screenshot" ? "Preparing" : "Screenshot"}
           </button>
-          <button type="button" onClick={() => onToast("GLB 导出需要接入模型导出管线。")}>
+          <button type="button" disabled={exporting !== null} onClick={handleGlbExport}>
             <Box size={20} />
-            GLB Export
+            {exporting === "glb" ? "Preparing" : "GLB Export"}
           </button>
         </div>
       </section>

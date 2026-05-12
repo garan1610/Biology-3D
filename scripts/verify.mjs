@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { PNG } from "pngjs";
@@ -146,6 +146,28 @@ async function verifyInteractions(browser) {
   await page.waitForTimeout(250);
   const modalTitle = await page.locator(".comparison-modal h3").innerText();
   assert(modalTitle.includes("Comparison View"), "comparison modal did not open");
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.waitForTimeout(250);
+
+  const [screenshotDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: /Screenshot/ }).click(),
+  ]);
+  const screenshotPath = await screenshotDownload.path();
+  assert(screenshotDownload.suggestedFilename().endsWith(".png"), "screenshot export should download a PNG");
+  assert(screenshotPath, "screenshot download did not produce a file path");
+  const screenshotFile = await stat(screenshotPath);
+  assert(screenshotFile.size > 10_000, "screenshot download is unexpectedly small");
+
+  const [glbDownload] = await Promise.all([
+    page.waitForEvent("download", { timeout: 45000 }),
+    page.getByRole("button", { name: /GLB Export/ }).click(),
+  ]);
+  const glbPath = await glbDownload.path();
+  assert(glbDownload.suggestedFilename().endsWith(".glb"), "GLB export should download a .glb file");
+  assert(glbPath, "GLB download did not produce a file path");
+  const glbFile = await stat(glbPath);
+  assert(glbFile.size > 10_000, "GLB download is unexpectedly small");
 
   await page.screenshot({ path: outPath("interaction.png"), fullPage: true });
   await page.locator("canvas").screenshot({ path: outPath("interaction-canvas.png") });
@@ -159,6 +181,14 @@ async function verifyInteractions(browser) {
     plantModelMetrics,
     whiteBloodModelMetrics,
     bacteriaMeshMetrics,
+    screenshotExport: {
+      fileName: screenshotDownload.suggestedFilename(),
+      size: screenshotFile.size,
+    },
+    glbExport: {
+      fileName: glbDownload.suggestedFilename(),
+      size: glbFile.size,
+    },
   };
 }
 

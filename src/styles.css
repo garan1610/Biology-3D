@@ -689,6 +689,13 @@ a {
   background: rgba(255, 255, 255, 0.5);
 }
 
+.stage-toolbar button:disabled,
+.export-toolbar button:disabled {
+  cursor: wait;
+  color: #8f877b;
+  background: rgba(255, 255, 255, 0.34);
+}
+
 .detail-heading button {
   display: grid;
   place-items: center;
