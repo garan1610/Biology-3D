@@ -193,6 +193,11 @@
         box-shadow:
           0 0 0 1px rgb(23 32 42 / 0.35),
           0 2px 7px rgb(0 0 0 / 0.25);
+        opacity: 0.78;
+        transition:
+          opacity 140ms ease,
+          transform 140ms ease,
+          box-shadow 140ms ease;
       }
 
       .label {
@@ -212,15 +217,15 @@
         fill: none;
         stroke: var(--callout-color, var(--accent));
         stroke-linecap: round;
-        stroke-width: 1.5;
+        stroke-width: 1.8;
         vector-effect: non-scaling-stroke;
       }
 
       .leader-line-bg {
         fill: none;
-        stroke: rgb(255 255 255 / 0.88);
+        stroke: rgb(255 255 255 / 0.72);
         stroke-linecap: round;
-        stroke-width: 4.5;
+        stroke-width: 4;
         vector-effect: non-scaling-stroke;
       }
 
@@ -248,6 +253,13 @@
         line-height: 1.18;
         box-shadow: 0 4px 12px rgb(23 32 42 / 0.12);
         backdrop-filter: blur(7px);
+        cursor: default;
+        opacity: 0.78;
+        transition:
+          border-color 140ms ease,
+          box-shadow 140ms ease,
+          opacity 140ms ease,
+          transform 140ms ease;
       }
 
       .callout-number {
@@ -266,6 +278,27 @@
       .callout-text {
         min-width: 0;
         overflow-wrap: anywhere;
+      }
+
+      .hotspot.is-active .dot {
+        opacity: 1;
+        transform: scale(1.18);
+        box-shadow:
+          0 0 0 2px rgb(255 255 255 / 0.9),
+          0 0 0 5px color-mix(in srgb, var(--callout-color, var(--accent)) 28%, transparent),
+          0 5px 14px rgb(0 0 0 / 0.28);
+      }
+
+      .callout.is-active {
+        border-color: color-mix(in srgb, var(--callout-color, var(--accent)) 62%, #ffffff);
+        opacity: 1;
+        transform: translateX(-3px);
+        box-shadow: 0 8px 18px rgb(23 32 42 / 0.18);
+      }
+
+      .stage.has-active .callout:not(.is-active),
+      .stage.has-active .hotspot:not(.is-active) .dot {
+        opacity: 0.42;
       }
 
       .body {
@@ -345,13 +378,13 @@
     <main>
       <header>
         <h1>生物 3D 教学参考图</h1>
-        <p class="subhead">官方内置 image_gen 生成。图上保留定位点，中文名称放在侧栏，并用连线对应到具体结构，适合老师演示、模型制作参考与站内标注。</p>
+        <p class="subhead">官方内置 image_gen 生成。图上保留轻量编号点，中文名称放在侧栏，适合老师演示、模型制作参考与站内标注。</p>
         <div class="meta">
           <span class="chip">生成日期：2026-05-31</span>
           <span class="chip">图片数量：12</span>
           <span class="chip">尺寸：1536 x 1024</span>
           <span class="chip">标注坐标：百分比</span>
-          <span class="chip">文字外置连线标注</span>
+          <span class="chip">编号点 + 名称列表</span>
         </div>
       </header>
 
@@ -806,6 +839,7 @@
             hotspot.dataset.index = String(index);
             hotspot.style.setProperty("--callout-color", color);
             hotspot.setAttribute("aria-label", text);
+            hotspot.tabIndex = 0;
             imagePanel.appendChild(hotspot);
 
             if (dot) {
@@ -822,10 +856,20 @@
             const item = document.createElement("div");
             item.className = "callout";
             item.dataset.index = String(index);
+            item.tabIndex = 0;
             item.style.setProperty("--callout-color", color);
             item.innerHTML = `<span class="callout-number">${index + 1}</span><span class="callout-text"></span>`;
             item.querySelector(".callout-text").textContent = text;
             rail.appendChild(item);
+
+            const activate = () => setActive(stage, index);
+            const lock = () => setActive(stage, index, true);
+            hotspot.addEventListener("mouseenter", activate);
+            hotspot.addEventListener("focus", activate);
+            hotspot.addEventListener("click", lock);
+            item.addEventListener("mouseenter", activate);
+            item.addEventListener("focus", activate);
+            item.addEventListener("click", lock);
           });
 
           const leaderLayer = document.createElementNS(svgNs, "svg");
@@ -836,7 +880,46 @@
 
           const redraw = () => requestAnimationFrame(() => layoutStage(stage));
           image.addEventListener("load", redraw, { once: false });
+          stage.addEventListener("mouseleave", () => {
+            if (stage.dataset.activeLocked !== "true") {
+              clearActive(stage);
+            }
+          });
+          stage.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              clearActive(stage);
+            }
+          });
           redraw();
+        }
+
+        function setActive(stage, index, locked = false) {
+          const current = stage.dataset.activeIndex;
+          if (locked && current === String(index) && stage.dataset.activeLocked === "true") {
+            clearActive(stage);
+            return;
+          }
+          stage.dataset.activeIndex = String(index);
+          stage.dataset.activeLocked = locked ? "true" : "false";
+          syncActiveClasses(stage);
+          layoutStage(stage);
+        }
+
+        function clearActive(stage) {
+          delete stage.dataset.activeIndex;
+          delete stage.dataset.activeLocked;
+          syncActiveClasses(stage);
+          const leaderLayer = stage.querySelector(".leader-layer");
+          leaderLayer?.replaceChildren();
+        }
+
+        function syncActiveClasses(stage) {
+          const active = stage.dataset.activeIndex;
+          const hasActive = active !== undefined;
+          stage.classList.toggle("has-active", hasActive);
+          stage.querySelectorAll(".hotspot, .callout").forEach((element) => {
+            element.classList.toggle("is-active", hasActive && element.dataset.index === active);
+          });
         }
 
         function layoutStage(stage) {
@@ -908,21 +991,25 @@
           leaderLayer.setAttribute("height", String(stageRect.height));
           leaderLayer.replaceChildren();
 
-          rows.forEach((row) => {
-            const dotRect = row.dot.getBoundingClientRect();
-            const itemRect = row.item.getBoundingClientRect();
-            const startX = dotRect.left + dotRect.width / 2 - stageRect.left;
-            const startY = dotRect.top + dotRect.height / 2 - stageRect.top;
-            const endX = itemRect.left - stageRect.left;
-            const endY = itemRect.top + itemRect.height / 2 - stageRect.top;
-            const tension = Math.max(28, Math.min(92, (endX - startX) * 0.38));
-            const d = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${(startX + tension).toFixed(1)} ${startY.toFixed(1)}, ${(endX - tension).toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-            const bg = makeSvgPath("leader-line-bg", row.color);
-            const line = makeSvgPath("leader-line", row.color);
-            bg.setAttribute("d", d);
-            line.setAttribute("d", d);
-            leaderLayer.append(bg, line);
-          });
+          const activeIndex = stage.dataset.activeIndex;
+          const activeRow = rows.find((row) => String(row.index) === activeIndex);
+          if (!activeRow) {
+            return;
+          }
+
+          const dotRect = activeRow.dot.getBoundingClientRect();
+          const itemRect = activeRow.item.getBoundingClientRect();
+          const startX = dotRect.left + dotRect.width / 2 - stageRect.left;
+          const startY = dotRect.top + dotRect.height / 2 - stageRect.top;
+          const endX = itemRect.left - stageRect.left;
+          const endY = itemRect.top + itemRect.height / 2 - stageRect.top;
+          const tension = Math.max(28, Math.min(92, (endX - startX) * 0.38));
+          const d = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${(startX + tension).toFixed(1)} ${startY.toFixed(1)}, ${(endX - tension).toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+          const bg = makeSvgPath("leader-line-bg", activeRow.color);
+          const line = makeSvgPath("leader-line", activeRow.color);
+          bg.setAttribute("d", d);
+          line.setAttribute("d", d);
+          leaderLayer.append(bg, line);
         }
 
         function initCallouts() {
