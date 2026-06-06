@@ -1,0 +1,1333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Biology Teaching Demo | Cell Architecture Studio</title>
+    <meta
+      name="description"
+      content="A multilingual biology teaching demo with image-based 3D references, numbered hotspots, and classroom-ready structure callouts."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f8;
+        --panel: #ffffff;
+        --text: #17202a;
+        --muted: #5d6673;
+        --line: #d9dee7;
+        --accent: #0f7c72;
+        --accent-2: #9c432f;
+        --marker: #f5c542;
+        --shadow: 0 18px 45px rgb(23 32 42 / 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      main {
+        width: min(1440px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 24px 0 48px;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: grid;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 20px 0 16px;
+        background: linear-gradient(180deg, var(--bg) 72%, rgb(245 247 248 / 0));
+      }
+
+      .topline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .title-block {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(28px, 3.5vw, 52px);
+        font-weight: 760;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .subhead {
+        max-width: 920px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .controls {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .language-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgb(255 255 255 / 0.92);
+        padding: 4px;
+        box-shadow: 0 10px 24px rgb(23 32 42 / 0.08);
+      }
+
+      .language-switch button,
+      .studio-link,
+      .github-link {
+        border: 1px solid transparent;
+        border-radius: 7px;
+        min-height: 36px;
+        background: transparent;
+        color: #2f3845;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 720;
+        letter-spacing: 0;
+        text-decoration: none;
+      }
+
+      .language-switch button {
+        min-width: 42px;
+        padding: 0 9px;
+      }
+
+      .language-switch button.is-active {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .studio-link,
+      .github-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        white-space: nowrap;
+      }
+
+      .studio-link {
+        border-color: var(--accent);
+        background: #0f7c72;
+        color: #fff;
+      }
+
+      .github-link {
+        border-color: var(--line);
+        background: #fff;
+        color: #17202a;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 900px), 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: clip;
+        box-shadow: var(--shadow);
+      }
+
+      .card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .card-title {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+
+      h2 {
+        font-size: 18px;
+        font-weight: 740;
+        line-height: 1.25;
+      }
+
+      .caption {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .links {
+        display: flex;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .links a {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: #17202a;
+        padding: 5px 9px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .links a:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .stage {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(176px, 220px);
+        gap: 12px;
+        padding: 12px;
+        background: #e9edf2;
+      }
+
+      .image-panel {
+        position: relative;
+        z-index: 2;
+        aspect-ratio: 3 / 2;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #dce3eb;
+      }
+
+      .image-panel img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .hotspot {
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+      }
+
+      .dot {
+        display: grid;
+        width: 21px;
+        height: 21px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 2px solid #fff;
+        border-radius: 999px;
+        background: var(--marker);
+        color: #17202a;
+        font-size: 10px;
+        font-weight: 760;
+        line-height: 1;
+        box-shadow:
+          0 0 0 1px rgb(23 32 42 / 0.35),
+          0 2px 7px rgb(0 0 0 / 0.25);
+        opacity: 0.82;
+        transition:
+          opacity 140ms ease,
+          transform 140ms ease,
+          box-shadow 140ms ease;
+      }
+
+      .label {
+        display: none;
+      }
+
+      .leader-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .leader-line {
+        fill: none;
+        stroke: var(--callout-color, var(--accent));
+        stroke-linecap: round;
+        stroke-width: 1.8;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .leader-line-bg {
+        fill: none;
+        stroke: rgb(255 255 255 / 0.72);
+        stroke-linecap: round;
+        stroke-width: 4;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .callout-rail {
+        position: relative;
+        z-index: 5;
+        min-height: 100%;
+        border-left: 1px solid rgb(23 32 42 / 0.14);
+      }
+
+      .callout {
+        position: absolute;
+        left: 10px;
+        right: 0;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid rgb(23 32 42 / 0.18);
+        border-radius: 7px;
+        background: rgb(255 255 255 / 0.94);
+        color: #111820;
+        padding: 5px 7px;
+        font-size: 12px;
+        font-weight: 650;
+        line-height: 1.18;
+        box-shadow: 0 4px 12px rgb(23 32 42 / 0.12);
+        backdrop-filter: blur(7px);
+        cursor: default;
+        opacity: 0.82;
+        transition:
+          border-color 140ms ease,
+          box-shadow 140ms ease,
+          opacity 140ms ease,
+          transform 140ms ease;
+      }
+
+      .callout-number {
+        display: grid;
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--callout-color, var(--accent));
+        color: #fff;
+        font-size: 10px;
+        font-weight: 760;
+      }
+
+      .callout-text {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .hotspot.is-active .dot {
+        opacity: 1;
+        transform: scale(1.18);
+        box-shadow:
+          0 0 0 2px rgb(255 255 255 / 0.9),
+          0 0 0 5px color-mix(in srgb, var(--callout-color, var(--accent)) 28%, transparent),
+          0 5px 14px rgb(0 0 0 / 0.28);
+      }
+
+      .callout.is-active {
+        border-color: color-mix(in srgb, var(--callout-color, var(--accent)) 62%, #ffffff);
+        opacity: 1;
+        transform: translateX(-3px);
+        box-shadow: 0 8px 18px rgb(23 32 42 / 0.18);
+      }
+
+      .stage.has-active .callout:not(.is-active),
+      .stage.has-active .hotspot:not(.is-active) .dot {
+        opacity: 0.42;
+      }
+
+      .body {
+        display: grid;
+        gap: 10px;
+        padding: 14px 16px 16px;
+      }
+
+      .goal {
+        color: #2d3745;
+        font-size: 14px;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .tag {
+        border-radius: 7px;
+        background: #eef6f4;
+        color: #155b54;
+        padding: 4px 7px;
+        font-size: 12px;
+      }
+
+      .tag:nth-child(3n) {
+        background: #f8eee9;
+        color: #7c3724;
+      }
+
+      .tag:nth-child(3n + 2) {
+        background: #eef1fb;
+        color: #334a7d;
+      }
+
+      @media (max-width: 840px) {
+        main {
+          width: min(100% - 20px, 720px);
+          padding-top: 10px;
+        }
+
+        header {
+          position: static;
+        }
+
+        .topline,
+        .card-head {
+          display: grid;
+        }
+
+        .controls {
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stage {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          padding: 8px;
+        }
+
+        .leader-layer {
+          display: none;
+        }
+
+        .callout-rail {
+          display: grid;
+          gap: 6px;
+          border-left: 0;
+        }
+
+        .callout {
+          position: static;
+          left: auto;
+          right: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="topline">
+          <div class="title-block">
+            <h1 id="page-title"></h1>
+            <p class="subhead" id="page-subhead"></p>
+          </div>
+          <div class="controls">
+            <div class="language-switch" role="group" aria-label="Language">
+              <button type="button" data-lang="en">EN</button>
+              <button type="button" data-lang="zh">中文</button>
+              <button type="button" data-lang="tr">TR</button>
+              <button type="button" data-lang="vi">VI</button>
+            </div>
+            <a class="studio-link" href="/" id="studio-link"></a>
+            <a
+              class="github-link"
+              href="https://github.com/cclank/cell-architecture-studio"
+              target="_blank"
+              rel="noreferrer"
+              id="github-link"
+            ></a>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="Biology teaching reference gallery" id="gallery"></section>
+    </main>
+
+    <script>
+      (() => {
+        const localeCopy = {
+          en: {
+            lang: "en",
+            title: "Biology 3D Teaching References",
+            subhead:
+              "A classroom demo for Cell Architecture Studio. Each image keeps numbered markers on the artwork, with localized structure names in the side rail for model reference, live explanation, and annotation planning.",
+            openStudio: "Open 3D Studio",
+            github: "GitHub",
+            study3d: "Study in 3D",
+            openJpg: "Open JPG",
+            imageAlt: "3D biology teaching reference"
+          },
+          zh: {
+            lang: "zh-CN",
+            title: "生物 3D 教学参考 Demo",
+            subhead:
+              "面向 Cell Architecture Studio 的课堂演示页。每张图保留编号标记，右侧用本地化结构名称做讲解栏，适合模型参考、现场讲解和网站标注规划。",
+            openStudio: "打开 3D Studio",
+            github: "GitHub",
+            study3d: "进入 3D 学习",
+            openJpg: "打开 JPG",
+            imageAlt: "3D 生物教学参考图"
+          },
+          tr: {
+            lang: "tr",
+            title: "Biyoloji 3D Öğretim Referansları",
+            subhead:
+              "Cell Architecture Studio için sınıf içi demo. Her görselde numaralı işaretler korunur; yan bölümde yerelleştirilmiş yapı adları model referansı, canlı anlatım ve anotasyon planlaması için kullanılır.",
+            openStudio: "3D Studio'yu aç",
+            github: "GitHub",
+            study3d: "3D'de çalış",
+            openJpg: "JPG aç",
+            imageAlt: "3D biyoloji öğretim referansı"
+          },
+          vi: {
+            lang: "vi",
+            title: "Tư liệu dạy học Sinh học 3D",
+            subhead:
+              "Trang demo cho Cell Architecture Studio. Mỗi hình giữ các điểm đánh số trên tranh, kèm tên cấu trúc đã bản địa hóa ở cột bên để tham chiếu mô hình, giảng trực tiếp và lập kế hoạch chú thích.",
+            openStudio: "Mở 3D Studio",
+            github: "GitHub",
+            study3d: "Học trong 3D",
+            openJpg: "Mở JPG",
+            imageAlt: "Tư liệu dạy học sinh học 3D"
+          }
+        };
+
+        const items = [
+          {
+            id: "neuron-synapse-transmission",
+            lessonId: "neuron-synapse-transport",
+            image: "jpg/neuron-synapse-transmission-teaching.jpg",
+            title: {
+              en: "Neuronal Synapse and Neurotransmitter Release",
+              zh: "神经突触与递质释放",
+              tr: "Nöronal Sinaps ve Nörotransmitter Salınımı",
+              vi: "Xinap thần kinh và giải phóng chất dẫn truyền"
+            },
+            caption: {
+              en: "Chemical signaling across a synapse",
+              zh: "突触间的化学信号传递",
+              tr: "Sinaps boyunca kimyasal sinyal iletimi",
+              vi: "Tín hiệu hóa học qua khe xinap"
+            },
+            goal: {
+              en: "Shows neurotransmitter release from the presynaptic membrane, diffusion across the synaptic cleft, and receptor activation on the postsynaptic membrane.",
+              zh: "演示突触前膜释放神经递质、递质跨越突触间隙并激活突触后膜受体的过程。",
+              tr: "Presinaptik zardan nörotransmitter salınımını, sinaptik yarıkta yayılımı ve postsinaptik zardaki reseptör etkinleşmesini gösterir.",
+              vi: "Minh họa chất dẫn truyền được giải phóng từ màng trước xinap, khuếch tán qua khe xinap và hoạt hóa thụ thể trên màng sau xinap."
+            },
+            tags: {
+              en: ["Nervous system", "Neural signaling", "Membrane receptors"],
+              zh: ["神经系统", "神经信号", "膜受体"],
+              tr: ["Sinir sistemi", "Nöral sinyal", "Zar reseptörleri"],
+              vi: ["Hệ thần kinh", "Tín hiệu thần kinh", "Thụ thể màng"]
+            },
+            hotspots: {
+              en: ["Presynaptic axon terminal", "Synaptic vesicles", "Mitochondrion", "Vesicle fusion site", "Synaptic cleft", "Neurotransmitters", "Postsynaptic membrane", "Receptor channels"],
+              zh: ["突触前轴突末梢", "突触小泡", "线粒体", "囊泡融合位点", "突触间隙", "神经递质", "突触后膜", "受体通道"],
+              tr: ["Presinaptik akson ucu", "Sinaptik veziküller", "Mitokondri", "Vezikül füzyon noktası", "Sinaptik yarık", "Nörotransmitterler", "Postsinaptik zar", "Reseptör kanalları"],
+              vi: ["Đầu tận cùng sợi trục trước xinap", "Túi xinap", "Ti thể", "Vị trí hòa màng của túi", "Khe xinap", "Chất dẫn truyền thần kinh", "Màng sau xinap", "Kênh thụ thể"]
+            },
+            points: [[27, 35], [38, 44], [33, 57], [52, 43], [60, 48], [64, 52], [80, 44], [75, 58]]
+          },
+          {
+            id: "chloroplast-photosynthesis",
+            lessonId: "photosynthesis-chloroplast",
+            image: "jpg/chloroplast-photosynthesis-teaching.jpg",
+            title: {
+              en: "Chloroplast and Photosynthetic Structures",
+              zh: "叶绿体与光合作用结构",
+              tr: "Kloroplast ve Fotosentetik Yapılar",
+              vi: "Lục lạp và các cấu trúc quang hợp"
+            },
+            caption: {
+              en: "Thylakoid stacks, stroma, and photosynthetic flow",
+              zh: "类囊体堆叠、基质与光合作用流向",
+              tr: "Tilakoit yığınları, stroma ve fotosentez akışı",
+              vi: "Chồng túi thylakoid, chất nền và dòng quang hợp"
+            },
+            goal: {
+              en: "Shows the chloroplast envelope, stroma, thylakoid stacks, and structures involved in photosynthesis.",
+              zh: "演示叶绿体双层膜、基质、类囊体堆叠和光合作用相关结构。",
+              tr: "Kloroplast zarfını, stromayı, tilakoit yığınlarını ve fotosentezde görev alan yapıları gösterir.",
+              vi: "Minh họa màng bao lục lạp, chất nền, các chồng thylakoid và những cấu trúc tham gia quang hợp."
+            },
+            tags: {
+              en: ["Plant cell", "Energy conversion", "Photosynthesis"],
+              zh: ["植物细胞", "能量转换", "光合作用"],
+              tr: ["Bitki hücresi", "Enerji dönüşümü", "Fotosentez"],
+              vi: ["Tế bào thực vật", "Chuyển hóa năng lượng", "Quang hợp"]
+            },
+            hotspots: {
+              en: ["Light direction", "Outer chloroplast membrane", "Double-membrane envelope", "Granum", "Thylakoid stack", "Stroma lamellae", "Stroma", "Circular chloroplast DNA", "Starch granule", "Oxygen release"],
+              zh: ["光照方向", "叶绿体外膜", "双层膜包被", "基粒", "类囊体堆叠", "基质片层", "基质", "环状叶绿体 DNA", "淀粉粒", "氧气释放"],
+              tr: ["Işık yönü", "Dış kloroplast zarı", "Çift zarlı kılıf", "Granum", "Tilakoit yığını", "Stroma lamelleri", "Stroma", "Dairesel kloroplast DNA'sı", "Nişasta taneciği", "Oksijen salınımı"],
+              vi: ["Hướng ánh sáng", "Màng ngoài lục lạp", "Bao màng kép", "Grana", "Chồng thylakoid", "Lá mỏng stroma", "Chất nền stroma", "DNA vòng của lục lạp", "Hạt tinh bột", "Giải phóng oxy"]
+            },
+            points: [[8, 8], [49, 14], [33, 24], [54, 45], [67, 48], [46, 51], [62, 64], [50, 62], [63, 78], [91, 17]]
+          },
+          {
+            id: "antibody-antigen-binding",
+            lessonId: "immune-vesicle-defense",
+            image: "jpg/antibody-antigen-binding-teaching.jpg",
+            title: {
+              en: "Antibody and Antigen Binding",
+              zh: "抗体与抗原结合",
+              tr: "Antikor ve Antijen Bağlanması",
+              vi: "Kháng thể và sự gắn kháng nguyên"
+            },
+            caption: {
+              en: "IgG architecture and epitope recognition",
+              zh: "IgG 架构与表位识别",
+              tr: "IgG mimarisi ve epitop tanıma",
+              vi: "Cấu trúc IgG và nhận diện epitope"
+            },
+            goal: {
+              en: "Shows the Y-shaped structure of an IgG antibody, its Fab and Fc regions, and the spatial match between an antibody and an antigen epitope.",
+              zh: "演示 IgG 抗体的 Y 形结构、Fab/Fc 区域，以及抗体结合抗原表位的空间匹配。",
+              tr: "IgG antikorunun Y biçimli yapısını, Fab ve Fc bölgelerini ve antikor ile antijen epitopu arasındaki uzamsal uyumu gösterir.",
+              vi: "Minh họa cấu trúc hình chữ Y của kháng thể IgG, các vùng Fab và Fc, cùng sự khớp không gian giữa kháng thể và epitope kháng nguyên."
+            },
+            tags: {
+              en: ["Immune system", "Protein structure", "Specific recognition"],
+              zh: ["免疫系统", "蛋白质结构", "特异性识别"],
+              tr: ["Bağışıklık sistemi", "Protein yapısı", "Özgül tanıma"],
+              vi: ["Hệ miễn dịch", "Cấu trúc protein", "Nhận diện đặc hiệu"]
+            },
+            hotspots: {
+              en: ["Antigen particle", "Surface antigen", "Antigen epitope", "Fab arm", "Antigen-binding site", "Hinge region", "Heavy and light chains", "Fc region"],
+              zh: ["抗原颗粒", "表面抗原", "抗原表位", "Fab 臂", "抗原结合位点", "铰链区", "重链与轻链", "Fc 段"],
+              tr: ["Antijen parçacığı", "Yüzey antijeni", "Antijen epitopu", "Fab kolu", "Antijen bağlanma bölgesi", "Menteşe bölgesi", "Ağır ve hafif zincirler", "Fc bölgesi"],
+              vi: ["Hạt kháng nguyên", "Kháng nguyên bề mặt", "Epitope kháng nguyên", "Nhánh Fab", "Vị trí gắn kháng nguyên", "Vùng bản lề", "Chuỗi nặng và chuỗi nhẹ", "Vùng Fc"]
+            },
+            points: [[54, 15], [67, 22], [46, 31], [36, 45], [45, 38], [50, 57], [42, 58], [52, 80]]
+          },
+          {
+            id: "alveoli-gas-exchange",
+            lessonId: "epithelial-exchange",
+            image: "jpg/alveoli-gas-exchange-teaching.jpg",
+            title: {
+              en: "Alveoli and Gas Exchange",
+              zh: "肺泡与气体交换",
+              tr: "Alveoller ve Gaz Değişimi",
+              vi: "Phế nang và trao đổi khí"
+            },
+            caption: {
+              en: "Alveolar wall, capillaries, and diffusion barrier",
+              zh: "肺泡壁、毛细血管与扩散屏障",
+              tr: "Alveol duvarı, kılcal damarlar ve difüzyon bariyeri",
+              vi: "Thành phế nang, mao mạch và hàng rào khuếch tán"
+            },
+            goal: {
+              en: "Shows the spatial relationship among the thin alveolar wall, capillary network, red blood cells, and the blood-air barrier.",
+              zh: "演示薄肺泡壁、毛细血管网、红细胞和气血屏障之间的空间关系。",
+              tr: "İnce alveol duvarı, kılcal damar ağı, alyuvarlar ve kan-hava bariyeri arasındaki uzamsal ilişkiyi gösterir.",
+              vi: "Minh họa quan hệ không gian giữa thành phế nang mỏng, mạng mao mạch, hồng cầu và hàng rào máu-khí."
+            },
+            tags: {
+              en: ["Respiratory system", "Gas exchange", "Structure and function"],
+              zh: ["呼吸系统", "气体交换", "结构与功能"],
+              tr: ["Solunum sistemi", "Gaz değişimi", "Yapı ve işlev"],
+              vi: ["Hệ hô hấp", "Trao đổi khí", "Cấu trúc và chức năng"]
+            },
+            hotspots: {
+              en: ["Alveolar lumen", "Alveolar wall", "Type I pneumocyte", "Type II pneumocyte", "Surfactant film", "Capillary network", "Red blood cell", "Gas molecules", "Blood-air barrier"],
+              zh: ["肺泡腔", "肺泡壁", "I 型肺泡细胞", "II 型肺泡细胞", "表面活性物质薄膜", "毛细血管网", "红细胞", "气体分子", "气血屏障"],
+              tr: ["Alveol boşluğu", "Alveol duvarı", "Tip I pnömosit", "Tip II pnömosit", "Sürfaktan filmi", "Kılcal damar ağı", "Alyuvar", "Gaz molekülleri", "Kan-hava bariyeri"],
+              vi: ["Lòng phế nang", "Thành phế nang", "Tế bào phế nang type I", "Tế bào phế nang type II", "Màng surfactant", "Mạng mao mạch", "Hồng cầu", "Phân tử khí", "Hàng rào máu-khí"]
+            },
+            points: [[35, 46], [21, 37], [29, 36], [38, 58], [41, 34], [60, 37], [68, 66], [51, 54], [64, 59]]
+          },
+          {
+            id: "nephron-glomerulus-filtration",
+            lessonId: "epithelial-exchange",
+            image: "jpg/nephron-glomerulus-filtration-teaching.jpg",
+            title: {
+              en: "Glomerulus and Filtration",
+              zh: "肾小球与滤过作用",
+              tr: "Glomerulus ve Filtrasyon",
+              vi: "Cầu thận và quá trình lọc"
+            },
+            caption: {
+              en: "Bowman's capsule, podocytes, and filtration slits",
+              zh: "鲍曼囊、足细胞与滤过裂隙",
+              tr: "Bowman kapsülü, podositler ve filtrasyon yarıkları",
+              vi: "Bao Bowman, tế bào có chân và khe lọc"
+            },
+            goal: {
+              en: "Shows the relationship among Bowman's capsule, the glomerular capillary tuft, podocytes, and filtration slits.",
+              zh: "演示鲍曼囊、肾小球毛细血管丛、足细胞和滤过裂隙之间的关系。",
+              tr: "Bowman kapsülü, glomerüler kılcal damar yumağı, podositler ve filtrasyon yarıkları arasındaki ilişkiyi gösterir.",
+              vi: "Minh họa quan hệ giữa bao Bowman, búi mao mạch cầu thận, tế bào có chân và các khe lọc."
+            },
+            tags: {
+              en: ["Urinary system", "Nephron", "Filtration"],
+              zh: ["泌尿系统", "肾单位", "滤过"],
+              tr: ["Boşaltım sistemi", "Nefron", "Filtrasyon"],
+              vi: ["Hệ tiết niệu", "Nephron", "Lọc"]
+            },
+            hotspots: {
+              en: ["Afferent arteriole", "Efferent arteriole", "Bowman's capsule", "Glomerular capillary tuft", "Podocyte", "Foot processes and filtration slits", "Red blood cell", "Bowman's space", "Start of proximal tubule"],
+              zh: ["入球小动脉", "出球小动脉", "鲍曼囊", "肾小球毛细血管丛", "足细胞", "足突与滤过裂隙", "红细胞", "鲍曼囊腔", "近端小管起始"],
+              tr: ["Getirici arteriyol", "Götürücü arteriyol", "Bowman kapsülü", "Glomerüler kılcal damar yumağı", "Podosit", "Ayaksı çıkıntılar ve filtrasyon yarıkları", "Alyuvar", "Bowman boşluğu", "Proksimal tübül başlangıcı"],
+              vi: ["Tiểu động mạch đến", "Tiểu động mạch đi", "Bao Bowman", "Búi mao mạch cầu thận", "Tế bào có chân", "Chân giả và khe lọc", "Hồng cầu", "Khoang Bowman", "Đầu ống lượn gần"]
+            },
+            points: [[15, 51], [16, 26], [69, 24], [55, 45], [55, 27], [53, 47], [62, 46], [72, 59], [86, 59]]
+          },
+          {
+            id: "root-tip-mitosis",
+            lessonId: "root-tip-mitosis",
+            image: "jpg/root-tip-mitosis-teaching.jpg",
+            title: {
+              en: "Root Tip and Mitosis",
+              zh: "根尖结构与有丝分裂",
+              tr: "Kök Ucu ve Mitoz",
+              vi: "Đỉnh rễ và nguyên phân"
+            },
+            caption: {
+              en: "Root growth zones with dividing cells",
+              zh: "含分裂细胞的根部生长分区",
+              tr: "Bölünen hücrelerle kök büyüme bölgeleri",
+              vi: "Các vùng sinh trưởng của rễ có tế bào đang phân chia"
+            },
+            goal: {
+              en: "Shows the root cap, meristematic zone, elongation zone, differentiation zone, and mitotic stages in root-tip cells.",
+              zh: "演示根冠、分生区、伸长区、分化区，以及根尖细胞中的有丝分裂阶段。",
+              tr: "Kök şapkası, meristem bölgesi, uzama bölgesi, farklılaşma bölgesi ve kök ucu hücrelerindeki mitoz evrelerini gösterir.",
+              vi: "Minh họa chóp rễ, vùng mô phân sinh, vùng kéo dài, vùng biệt hóa và các giai đoạn nguyên phân trong tế bào đỉnh rễ."
+            },
+            tags: {
+              en: ["Plant growth", "Cell division", "Tissue zones"],
+              zh: ["植物生长", "细胞分裂", "组织分区"],
+              tr: ["Bitki büyümesi", "Hücre bölünmesi", "Doku bölgeleri"],
+              vi: ["Sinh trưởng thực vật", "Phân chia tế bào", "Vùng mô"]
+            },
+            hotspots: {
+              en: ["Root cap", "Meristematic zone", "Mitotic cell", "Chromosomes", "Cell wall", "Nucleus", "Elongation zone", "Differentiation zone", "Root hair"],
+              zh: ["根冠", "分生区", "有丝分裂细胞", "染色体", "细胞壁", "细胞核", "伸长区", "分化区", "根毛"],
+              tr: ["Kök şapkası", "Meristematik bölge", "Mitozdaki hücre", "Kromozomlar", "Hücre duvarı", "Çekirdek", "Uzama bölgesi", "Farklılaşma bölgesi", "Kök tüyü"],
+              vi: ["Chóp rễ", "Vùng mô phân sinh", "Tế bào đang nguyên phân", "Nhiễm sắc thể", "Thành tế bào", "Nhân", "Vùng kéo dài", "Vùng biệt hóa", "Lông hút"]
+            },
+            points: [[27, 79], [36, 60], [42, 53], [45, 52], [52, 43], [67, 33], [58, 37], [72, 25], [83, 17]]
+          },
+          {
+            id: "dna-replication-fork",
+            lessonId: "cell-cycle-replication",
+            image: "jpg/dna-replication-fork-teaching.jpg",
+            title: {
+              en: "DNA Replication Fork",
+              zh: "DNA 复制叉",
+              tr: "DNA Replikasyon Çatalı",
+              vi: "Chạc sao chép DNA"
+            },
+            caption: {
+              en: "Leading and lagging strand synthesis",
+              zh: "前导链与后随链的合成",
+              tr: "Öncü ve geciken iplik sentezi",
+              vi: "Tổng hợp mạch dẫn đầu và mạch chậm"
+            },
+            goal: {
+              en: "Shows DNA unwinding, continuous leading-strand synthesis, discontinuous lagging-strand synthesis, and the spatial arrangement of replication enzymes.",
+              zh: "演示 DNA 解旋、前导链连续合成、后随链不连续合成，以及复制酶的空间排列。",
+              tr: "DNA açılmasını, öncü ipliğin sürekli sentezini, geciken ipliğin kesintili sentezini ve replikasyon enzimlerinin uzamsal düzenini gösterir.",
+              vi: "Minh họa DNA tháo xoắn, tổng hợp liên tục ở mạch dẫn đầu, tổng hợp gián đoạn ở mạch chậm và sự sắp xếp không gian của các enzyme sao chép."
+            },
+            tags: {
+              en: ["Genetic information", "DNA replication", "Molecular mechanism"],
+              zh: ["遗传信息", "DNA 复制", "分子机制"],
+              tr: ["Genetik bilgi", "DNA replikasyonu", "Moleküler mekanizma"],
+              vi: ["Thông tin di truyền", "Sao chép DNA", "Cơ chế phân tử"]
+            },
+            hotspots: {
+              en: ["Replication fork", "Helicase", "Single-strand binding proteins", "Leading strand", "DNA polymerase", "Sliding clamp", "Lagging strand", "Okazaki fragment", "RNA primer"],
+              zh: ["复制叉", "解旋酶", "单链结合蛋白", "前导链", "DNA 聚合酶", "滑动夹", "后随链", "冈崎片段", "RNA 引物"],
+              tr: ["Replikasyon çatalı", "Helikaz", "Tek iplik bağlayıcı proteinler", "Öncü iplik", "DNA polimeraz", "Kayan kelepçe", "Geciken iplik", "Okazaki parçası", "RNA primeri"],
+              vi: ["Chạc sao chép", "Helicase", "Protein gắn mạch đơn", "Mạch dẫn đầu", "DNA polymerase", "Kẹp trượt", "Mạch chậm", "Đoạn Okazaki", "Mồi RNA"]
+            },
+            points: [[52, 36], [47, 43], [61, 44], [27, 64], [23, 59], [14, 63], [72, 64], [76, 66], [67, 58]]
+          },
+          {
+            id: "meiosis-crossing-over",
+            lessonId: "cell-cycle-replication",
+            image: "jpg/meiosis-crossing-over-teaching.jpg",
+            title: {
+              en: "Meiosis and Homologous Chromosome Crossing Over",
+              zh: "减数分裂与同源染色体交换",
+              tr: "Mayoz ve Homolog Kromozom Crossing-Over",
+              vi: "Giảm phân và trao đổi chéo nhiễm sắc thể tương đồng"
+            },
+            caption: {
+              en: "Homologous chromosomes and recombination",
+              zh: "同源染色体与重组",
+              tr: "Homolog kromozomlar ve rekombinasyon",
+              vi: "Nhiễm sắc thể tương đồng và tái tổ hợp"
+            },
+            goal: {
+              en: "Shows homologous chromosome pairing, tetrad formation, and non-sister chromatid exchange during prophase I of meiosis.",
+              zh: "演示减数分裂前期 I 中同源染色体配对、四分体形成和非姐妹染色单体交换。",
+              tr: "Mayozun profaz I evresinde homolog kromozom eşleşmesini, tetrat oluşumunu ve kardeş olmayan kromatit değişimini gösterir.",
+              vi: "Minh họa sự bắt cặp nhiễm sắc thể tương đồng, hình thành bộ bốn và trao đổi giữa các chromatid không chị em trong kỳ đầu I của giảm phân."
+            },
+            tags: {
+              en: ["Genetic variation", "Meiosis", "Chromosome behavior"],
+              zh: ["遗传变异", "减数分裂", "染色体行为"],
+              tr: ["Genetik çeşitlilik", "Mayoz", "Kromozom davranışı"],
+              vi: ["Biến dị di truyền", "Giảm phân", "Hành vi nhiễm sắc thể"]
+            },
+            hotspots: {
+              en: ["Nucleus", "Nuclear envelope", "Homologous chromosomes", "Sister chromatids", "Tetrad", "Chiasma crossing point", "Exchanged segment", "Centrosome", "Spindle fibers"],
+              zh: ["细胞核", "核膜", "同源染色体", "姐妹染色单体", "四分体", "交叉互换点", "交换片段", "中心体", "纺锤丝"],
+              tr: ["Çekirdek", "Çekirdek zarı", "Homolog kromozomlar", "Kardeş kromatitler", "Tetrat", "Kiyazma noktası", "Değişen segment", "Sentrozom", "İğ iplikleri"],
+              vi: ["Nhân", "Màng nhân", "Nhiễm sắc thể tương đồng", "Chromatid chị em", "Bộ bốn", "Điểm bắt chéo chiasma", "Đoạn đã trao đổi", "Trung thể", "Sợi thoi"]
+            },
+            points: [[50, 48], [75, 24], [39, 45], [58, 40], [50, 44], [51, 55], [47, 58], [12, 48], [78, 45]]
+          },
+          {
+            id: "enzyme-catalysis-active-site",
+            lessonId: "protein-translation-ribosome",
+            image: "jpg/enzyme-catalysis-active-site-teaching.jpg",
+            title: {
+              en: "Enzyme Catalysis and Active Site",
+              zh: "酶催化与活性位点",
+              tr: "Enzim Katalizi ve Aktif Bölge",
+              vi: "Xúc tác enzyme và vị trí hoạt động"
+            },
+            caption: {
+              en: "Substrate fit, catalytic residues, and product release",
+              zh: "底物匹配、催化残基与产物释放",
+              tr: "Substrat uyumu, katalitik kalıntılar ve ürün salınımı",
+              vi: "Sự khớp cơ chất, gốc xúc tác và giải phóng sản phẩm"
+            },
+            goal: {
+              en: "Shows the enzyme active site, substrate specificity, enzyme-substrate complex, and product release.",
+              zh: "演示酶活性位点、底物特异性、酶-底物复合物和产物释放。",
+              tr: "Enzimin aktif bölgesini, substrat özgüllüğünü, enzim-substrat kompleksini ve ürün salınımını gösterir.",
+              vi: "Minh họa vị trí hoạt động của enzyme, tính đặc hiệu cơ chất, phức hợp enzyme-cơ chất và sự giải phóng sản phẩm."
+            },
+            tags: {
+              en: ["Enzymes and metabolism", "Protein structure", "Catalytic reaction"],
+              zh: ["酶与代谢", "蛋白质结构", "催化反应"],
+              tr: ["Enzimler ve metabolizma", "Protein yapısı", "Katalitik tepkime"],
+              vi: ["Enzyme và chuyển hóa", "Cấu trúc protein", "Phản ứng xúc tác"]
+            },
+            hotspots: {
+              en: ["Enzyme surface", "Active site", "Substrate", "Catalytic residues", "Noncovalent interactions", "Enzyme-substrate complex", "Product release", "Product molecules"],
+              zh: ["酶表面", "活性位点", "底物", "催化残基", "非共价相互作用", "酶-底物复合物", "产物释放", "产物分子"],
+              tr: ["Enzim yüzeyi", "Aktif bölge", "Substrat", "Katalitik kalıntılar", "Kovalent olmayan etkileşimler", "Enzim-substrat kompleksi", "Ürün salınımı", "Ürün molekülleri"],
+              vi: ["Bề mặt enzyme", "Vị trí hoạt động", "Cơ chất", "Gốc xúc tác", "Tương tác không cộng hóa trị", "Phức hợp enzyme-cơ chất", "Giải phóng sản phẩm", "Phân tử sản phẩm"]
+            },
+            points: [[30, 31], [39, 43], [44, 52], [35, 55], [39, 50], [49, 53], [82, 44], [90, 67]]
+          },
+          {
+            id: "bacterial-cell-structure",
+            lessonId: "bacteria-structure",
+            image: "jpg/bacterial-cell-structure-teaching.jpg",
+            title: {
+              en: "Bacterial Cell Structure",
+              zh: "细菌细胞结构",
+              tr: "Bakteri Hücre Yapısı",
+              vi: "Cấu trúc tế bào vi khuẩn"
+            },
+            caption: {
+              en: "Core prokaryotic anatomy",
+              zh: "原核细胞核心解剖结构",
+              tr: "Temel prokaryot anatomi",
+              vi: "Giải phẫu cơ bản của tế bào nhân sơ"
+            },
+            goal: {
+              en: "Shows a prokaryotic cell without a membrane-bound nucleus, with genetic material in the nucleoid region plus a cell wall, plasma membrane, plasmids, pili, and flagellum.",
+              zh: "演示没有膜包被细胞核的原核细胞，包括拟核区遗传物质、细胞壁、质膜、质粒、菌毛和鞭毛。",
+              tr: "Zarla çevrili çekirdeği olmayan bir prokaryot hücreyi; nükleoid bölgedeki genetik materyali, hücre duvarını, plazma zarını, plazmitleri, pilusları ve kamçıyı gösterir.",
+              vi: "Minh họa tế bào nhân sơ không có nhân được bao màng, với vật chất di truyền ở vùng nhân, thành tế bào, màng sinh chất, plasmid, pili và roi."
+            },
+            tags: {
+              en: ["Prokaryotes", "Microbiology", "Cell structure"],
+              zh: ["原核生物", "微生物学", "细胞结构"],
+              tr: ["Prokaryotlar", "Mikrobiyoloji", "Hücre yapısı"],
+              vi: ["Sinh vật nhân sơ", "Vi sinh vật học", "Cấu trúc tế bào"]
+            },
+            hotspots: {
+              en: ["Capsule", "Cell wall", "Cell membrane", "Cytoplasm", "Nucleoid region", "Circular chromosome DNA", "Plasmid", "Ribosomes", "Pili", "Flagellum"],
+              zh: ["荚膜", "细胞壁", "细胞膜", "细胞质", "拟核区", "环状染色体 DNA", "质粒", "核糖体", "菌毛", "鞭毛"],
+              tr: ["Kapsül", "Hücre duvarı", "Hücre zarı", "Sitoplazma", "Nükleoid bölge", "Dairesel kromozom DNA'sı", "Plazmit", "Ribozomlar", "Piluslar", "Kamçı"],
+              vi: ["Vỏ nhầy", "Thành tế bào", "Màng tế bào", "Tế bào chất", "Vùng nhân", "DNA nhiễm sắc thể dạng vòng", "Plasmid", "Ribosome", "Pili", "Roi"]
+            },
+            points: [[42, 24], [44, 31], [45, 36], [50, 47], [48, 50], [49, 48], [69, 38], [63, 55], [33, 20], [82, 51]]
+          },
+          {
+            id: "crispr-cas9-gene-editing",
+            lessonId: "crispr-nucleoid-editing",
+            image: "jpg/crispr-cas9-gene-editing-teaching.jpg",
+            title: {
+              en: "CRISPR-Cas9 Gene Editing",
+              zh: "CRISPR-Cas9 基因编辑",
+              tr: "CRISPR-Cas9 Gen Düzenleme",
+              vi: "Chỉnh sửa gen CRISPR-Cas9"
+            },
+            caption: {
+              en: "Guide RNA targeting and double-strand cutting",
+              zh: "向导 RNA 靶向与双链切割",
+              tr: "Kılavuz RNA hedeflemesi ve çift zincir kesimi",
+              vi: "RNA dẫn đường định vị mục tiêu và cắt hai mạch"
+            },
+            goal: {
+              en: "Shows how the Cas9 protein uses guide RNA to recognize a target DNA sequence and cut both DNA strands.",
+              zh: "演示 Cas9 蛋白如何利用向导 RNA 识别目标 DNA 序列并切开双链 DNA。",
+              tr: "Cas9 proteininin kılavuz RNA kullanarak hedef DNA dizisini nasıl tanıdığını ve iki DNA zincirini nasıl kestiğini gösterir.",
+              vi: "Minh họa protein Cas9 dùng RNA dẫn đường để nhận diện trình tự DNA mục tiêu và cắt cả hai mạch DNA."
+            },
+            tags: {
+              en: ["Modern biotechnology", "Gene editing", "DNA cleavage"],
+              zh: ["现代生物技术", "基因编辑", "DNA 切割"],
+              tr: ["Modern biyoteknoloji", "Gen düzenleme", "DNA kesimi"],
+              vi: ["Công nghệ sinh học hiện đại", "Chỉnh sửa gen", "Cắt DNA"]
+            },
+            hotspots: {
+              en: ["Cas9 protein", "Target DNA", "Guide RNA", "RNA-DNA pairing region", "Cleavage site", "Broken DNA ends", "Metal ion cofactor", "Double-stranded DNA"],
+              zh: ["Cas9 蛋白", "目标 DNA", "向导 RNA", "RNA-DNA 配对区域", "切割位点", "断裂 DNA 末端", "金属离子辅因子", "双链 DNA"],
+              tr: ["Cas9 proteini", "Hedef DNA", "Kılavuz RNA", "RNA-DNA eşleşme bölgesi", "Kesim bölgesi", "Kırılmış DNA uçları", "Metal iyon kofaktörü", "Çift zincirli DNA"],
+              vi: ["Protein Cas9", "DNA mục tiêu", "RNA dẫn đường", "Vùng bắt cặp RNA-DNA", "Vị trí cắt", "Đầu DNA bị đứt", "Đồng yếu tố ion kim loại", "DNA mạch kép"]
+            },
+            points: [[53, 42], [31, 52], [65, 38], [57, 52], [48, 51], [50, 59], [48, 57], [83, 59]]
+          },
+          {
+            id: "plant-vascular-bundle-transport",
+            lessonId: "plant-transport-vacuole",
+            image: "jpg/plant-vascular-bundle-transport-teaching.jpg",
+            title: {
+              en: "Plant Vascular Bundle Transport",
+              zh: "植物维管束运输",
+              tr: "Bitki Vasküler Demet Taşınımı",
+              vi: "Vận chuyển trong bó mạch thực vật"
+            },
+            caption: {
+              en: "Xylem, phloem, cambium, and transport direction",
+              zh: "木质部、韧皮部、形成层与运输方向",
+              tr: "Ksilem, floem, kambiyum ve taşınım yönü",
+              vi: "Mạch gỗ, mạch rây, tầng sinh mạch và hướng vận chuyển"
+            },
+            goal: {
+              en: "Shows xylem, phloem, cambium, and water or organic-molecule transport structures in a stem cross-section.",
+              zh: "演示茎横切面中的木质部、韧皮部、形成层，以及水分或有机物运输结构。",
+              tr: "Gövde enine kesitinde ksilem, floem, kambiyum ve su ya da organik molekül taşınım yapılarını gösterir.",
+              vi: "Minh họa mạch gỗ, mạch rây, tầng sinh mạch và các cấu trúc vận chuyển nước hoặc phân tử hữu cơ trong lát cắt ngang thân cây."
+            },
+            tags: {
+              en: ["Plant tissue", "Vascular bundle", "Material transport"],
+              zh: ["植物组织", "维管束", "物质运输"],
+              tr: ["Bitki dokusu", "Vasküler demet", "Madde taşınımı"],
+              vi: ["Mô thực vật", "Bó mạch", "Vận chuyển vật chất"]
+            },
+            hotspots: {
+              en: ["Epidermis", "Cortex", "Ring of vascular bundles", "Pith", "Xylem vessel", "Water transport", "Cambium", "Phloem sieve tube", "Companion cell", "Organic solute transport"],
+              zh: ["表皮", "皮层", "维管束环", "髓部", "木质部导管", "水分运输", "形成层", "韧皮部筛管", "伴胞", "有机溶质运输"],
+              tr: ["Epidermis", "Korteks", "Vasküler demet halkası", "Öz bölgesi", "Ksilem damarı", "Su taşınımı", "Kambiyum", "Floem kalburlu borusu", "Arkadaş hücre", "Organik çözelti taşınımı"],
+              vi: ["Biểu bì", "Vỏ", "Vòng bó mạch", "Tủy", "Ống mạch gỗ", "Vận chuyển nước", "Tầng sinh mạch", "Ống rây mạch rây", "Tế bào kèm", "Vận chuyển chất tan hữu cơ"]
+            },
+            points: [[91, 23], [86, 38], [82, 20], [59, 25], [27, 62], [26, 50], [48, 66], [63, 68], [69, 68], [74, 60]]
+          }
+        ];
+
+        const colors = [
+          "#0f7c72",
+          "#9c432f",
+          "#334a7d",
+          "#7b4aa0",
+          "#a36b00",
+          "#2f6d3b",
+          "#b33c6b",
+          "#4f6678",
+          "#007093",
+          "#885a22"
+        ];
+
+        const supportedLocales = Object.keys(localeCopy);
+        const svgNs = "http://www.w3.org/2000/svg";
+        let currentLocale = getInitialLocale();
+
+        function getInitialLocale() {
+          const params = new URLSearchParams(window.location.search);
+          const requested = params.get("lang");
+          if (requested === "cn") {
+            return "zh";
+          }
+          if (supportedLocales.includes(requested)) {
+            return requested;
+          }
+          const saved = window.localStorage.getItem("cell-architecture-studio:teaching-demo-language");
+          if (supportedLocales.includes(saved)) {
+            return saved;
+          }
+          const browserLanguage = navigator.language.toLowerCase();
+          if (browserLanguage.startsWith("zh")) {
+            return "zh";
+          }
+          if (browserLanguage.startsWith("tr")) {
+            return "tr";
+          }
+          if (browserLanguage.startsWith("vi")) {
+            return "vi";
+          }
+          return "en";
+        }
+
+        function text(value) {
+          return value[currentLocale] || value.en;
+        }
+
+        function setLanguage(locale) {
+          currentLocale = locale;
+          window.localStorage.setItem("cell-architecture-studio:teaching-demo-language", locale);
+          const url = new URL(window.location.href);
+          url.searchParams.set("lang", locale);
+          window.history.replaceState({}, "", url);
+          renderPage();
+        }
+
+        function appendText(parent, tagName, className, value) {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          element.textContent = value;
+          parent.appendChild(element);
+          return element;
+        }
+
+        function createLink(href, label) {
+          const link = document.createElement("a");
+          link.href = href;
+          link.textContent = label;
+          return link;
+        }
+
+        function createStudioLessonHref(lessonId) {
+          const params = new URLSearchParams();
+          params.set("lesson", lessonId);
+          if (currentLocale === "zh") {
+            params.set("lang", "zh");
+          }
+          return `/?${params.toString()}#notebooks`;
+        }
+
+        function updateHeader() {
+          const copy = localeCopy[currentLocale];
+          document.documentElement.lang = copy.lang;
+          document.title = `${copy.title} | Cell Architecture Studio`;
+          document.querySelector("#page-title").textContent = copy.title;
+          document.querySelector("#page-subhead").textContent = copy.subhead;
+          document.querySelector("#studio-link").textContent = copy.openStudio;
+          document.querySelector("#github-link").textContent = copy.github;
+          document.querySelector(".language-switch").setAttribute("aria-label", copy.language || "Language");
+          document.querySelectorAll("[data-lang]").forEach((button) => {
+            button.classList.toggle("is-active", button.dataset.lang === currentLocale);
+            button.setAttribute("aria-pressed", String(button.dataset.lang === currentLocale));
+          });
+
+        }
+
+        function renderGallery() {
+          const copy = localeCopy[currentLocale];
+          const gallery = document.querySelector("#gallery");
+          gallery.replaceChildren();
+
+          items.forEach((item, itemIndex) => {
+            const article = document.createElement("article");
+            article.className = "card";
+
+            const cardHead = document.createElement("div");
+            cardHead.className = "card-head";
+
+            const cardTitle = document.createElement("div");
+            cardTitle.className = "card-title";
+            appendText(cardTitle, "h2", "", text(item.title));
+            appendText(cardTitle, "p", "caption", text(item.caption));
+
+            const links = document.createElement("div");
+            links.className = "links";
+            links.append(createLink(createStudioLessonHref(item.lessonId), copy.study3d));
+            links.append(createLink(item.image, copy.openJpg));
+            cardHead.append(cardTitle, links);
+
+            const stage = document.createElement("div");
+            stage.className = "stage";
+            const imagePanel = document.createElement("div");
+            imagePanel.className = "image-panel";
+            const image = document.createElement("img");
+            image.src = item.image;
+            image.alt = `${text(item.title)} ${copy.imageAlt}`;
+            image.loading = itemIndex < 2 ? "eager" : "lazy";
+            image.decoding = "async";
+            imagePanel.appendChild(image);
+
+            const rail = document.createElement("div");
+            rail.className = "callout-rail";
+
+            text(item.hotspots).forEach((label, index) => {
+              const [x, y] = item.points[index];
+              const color = colors[index % colors.length];
+              const hotspot = document.createElement("span");
+              hotspot.className = "hotspot";
+              hotspot.dataset.index = String(index);
+              hotspot.style.setProperty("--x", `${x}%`);
+              hotspot.style.setProperty("--y", `${y}%`);
+              hotspot.style.setProperty("--callout-color", color);
+              hotspot.setAttribute("aria-label", label);
+              hotspot.tabIndex = 0;
+
+              const dot = document.createElement("span");
+              dot.className = "dot";
+              dot.textContent = String(index + 1);
+              dot.style.setProperty("--callout-color", color);
+              dot.style.background = color;
+              dot.style.color = "#fff";
+              hotspot.appendChild(dot);
+              imagePanel.appendChild(hotspot);
+
+              const callout = document.createElement("div");
+              callout.className = "callout";
+              callout.dataset.index = String(index);
+              callout.tabIndex = 0;
+              callout.style.setProperty("--callout-color", color);
+              callout.innerHTML = `<span class="callout-number">${index + 1}</span><span class="callout-text"></span>`;
+              callout.querySelector(".callout-text").textContent = label;
+              rail.appendChild(callout);
+
+              const activate = () => setActive(stage, index);
+              const lock = () => setActive(stage, index, true);
+              hotspot.addEventListener("mouseenter", activate);
+              hotspot.addEventListener("focus", activate);
+              hotspot.addEventListener("click", lock);
+              callout.addEventListener("mouseenter", activate);
+              callout.addEventListener("focus", activate);
+              callout.addEventListener("click", lock);
+            });
+
+            const leaderLayer = document.createElementNS(svgNs, "svg");
+            leaderLayer.setAttribute("class", "leader-layer");
+            leaderLayer.setAttribute("aria-hidden", "true");
+            stage.append(imagePanel, rail, leaderLayer);
+
+            const body = document.createElement("div");
+            body.className = "body";
+            appendText(body, "p", "goal", text(item.goal));
+
+            const tagList = document.createElement("div");
+            tagList.className = "tag-list";
+            text(item.tags).forEach((tag) => appendText(tagList, "span", "tag", tag));
+            body.appendChild(tagList);
+
+            article.append(cardHead, stage, body);
+            gallery.appendChild(article);
+
+            image.addEventListener("load", () => layoutStage(stage), { once: false });
+            stage.addEventListener("mouseleave", () => {
+              if (stage.dataset.activeLocked !== "true") {
+                clearActive(stage);
+              }
+            });
+            stage.addEventListener("keydown", (event) => {
+              if (event.key === "Escape") {
+                clearActive(stage);
+              }
+            });
+          });
+        }
+
+        function makeSvgPath(className, color) {
+          const path = document.createElementNS(svgNs, "path");
+          path.setAttribute("class", className);
+          path.style.setProperty("--callout-color", color);
+          return path;
+        }
+
+        function setActive(stage, index, locked = false) {
+          const current = stage.dataset.activeIndex;
+          if (locked && current === String(index) && stage.dataset.activeLocked === "true") {
+            clearActive(stage);
+            return;
+          }
+          stage.dataset.activeIndex = String(index);
+          stage.dataset.activeLocked = locked ? "true" : "false";
+          syncActiveClasses(stage);
+          layoutStage(stage);
+        }
+
+        function clearActive(stage) {
+          delete stage.dataset.activeIndex;
+          delete stage.dataset.activeLocked;
+          syncActiveClasses(stage);
+          stage.querySelector(".leader-layer")?.replaceChildren();
+        }
+
+        function syncActiveClasses(stage) {
+          const active = stage.dataset.activeIndex;
+          const hasActive = active !== undefined;
+          stage.classList.toggle("has-active", hasActive);
+          stage.querySelectorAll(".hotspot, .callout").forEach((element) => {
+            element.classList.toggle("is-active", hasActive && element.dataset.index === active);
+          });
+        }
+
+        function layoutStage(stage) {
+          const imagePanel = stage.querySelector(".image-panel");
+          const rail = stage.querySelector(".callout-rail");
+          const leaderLayer = stage.querySelector(".leader-layer");
+          if (!imagePanel || !rail || !leaderLayer || getComputedStyle(leaderLayer).display === "none") {
+            return;
+          }
+
+          const stageRect = stage.getBoundingClientRect();
+          const railRect = rail.getBoundingClientRect();
+          if (stageRect.width === 0 || stageRect.height === 0 || railRect.height === 0) {
+            return;
+          }
+
+          const rows = Array.from(stage.querySelectorAll(".hotspot"))
+            .map((hotspot) => {
+              const index = Number(hotspot.dataset.index);
+              const item = rail.querySelector(`.callout[data-index="${index}"]`);
+              const dot = hotspot.querySelector(".dot");
+              const color = colors[index % colors.length];
+              return { hotspot, item, dot, color, index };
+            })
+            .filter((row) => row.item && row.dot);
+
+          rows.forEach((row) => {
+            row.item.style.top = "0px";
+          });
+
+          const measured = rows
+            .map((row) => {
+              const dotRect = row.dot.getBoundingClientRect();
+              const itemRect = row.item.getBoundingClientRect();
+              const desiredCenter = dotRect.top + dotRect.height / 2 - railRect.top;
+              return {
+                ...row,
+                height: itemRect.height,
+                desiredTop: desiredCenter - itemRect.height / 2
+              };
+            })
+            .sort((a, b) => a.desiredTop - b.desiredTop);
+
+          const minGap = 6;
+          let cursor = 0;
+          measured.forEach((row) => {
+            row.top = Math.max(0, row.desiredTop, cursor);
+            cursor = row.top + row.height + minGap;
+          });
+
+          const last = measured[measured.length - 1];
+          if (last) {
+            const overflow = last.top + last.height - railRect.height;
+            if (overflow > 0) {
+              last.top -= overflow;
+              for (let index = measured.length - 2; index >= 0; index -= 1) {
+                const next = measured[index + 1];
+                const row = measured[index];
+                row.top = Math.min(row.top, next.top - row.height - minGap);
+              }
+              measured.forEach((row) => {
+                row.top = Math.max(0, row.top);
+              });
+            }
+          }
+
+          measured.forEach((row) => {
+            row.item.style.top = `${row.top}px`;
+          });
+
+          leaderLayer.setAttribute("viewBox", `0 0 ${stageRect.width} ${stageRect.height}`);
+          leaderLayer.setAttribute("width", String(stageRect.width));
+          leaderLayer.setAttribute("height", String(stageRect.height));
+          leaderLayer.replaceChildren();
+
+          const activeIndex = stage.dataset.activeIndex;
+          const activeRow = rows.find((row) => String(row.index) === activeIndex);
+          if (!activeRow) {
+            return;
+          }
+
+          const dotRect = activeRow.dot.getBoundingClientRect();
+          const itemRect = activeRow.item.getBoundingClientRect();
+          const startX = dotRect.left + dotRect.width / 2 - stageRect.left;
+          const startY = dotRect.top + dotRect.height / 2 - stageRect.top;
+          const endX = itemRect.left - stageRect.left;
+          const endY = itemRect.top + itemRect.height / 2 - stageRect.top;
+          const tension = Math.max(28, Math.min(92, (endX - startX) * 0.38));
+          const d = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${(startX + tension).toFixed(1)} ${startY.toFixed(1)}, ${(endX - tension).toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+          const bg = makeSvgPath("leader-line-bg", activeRow.color);
+          const line = makeSvgPath("leader-line", activeRow.color);
+          bg.setAttribute("d", d);
+          line.setAttribute("d", d);
+          leaderLayer.append(bg, line);
+        }
+
+        function renderPage() {
+          updateHeader();
+          renderGallery();
+          requestAnimationFrame(() => document.querySelectorAll(".stage").forEach(layoutStage));
+        }
+
+        document.querySelectorAll("[data-lang]").forEach((button) => {
+          button.addEventListener("click", () => setLanguage(button.dataset.lang));
+        });
+
+        if ("ResizeObserver" in window) {
+          const observer = new ResizeObserver(() => {
+            document.querySelectorAll(".stage").forEach(layoutStage);
+          });
+          observer.observe(document.body);
+        }
+        window.addEventListener("resize", () => document.querySelectorAll(".stage").forEach(layoutStage));
+        window.addEventListener("load", () => document.querySelectorAll(".stage").forEach(layoutStage));
+        renderPage();
+      })();
+    </script>
+  </body>
+</html>

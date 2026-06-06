@@ -1,0 +1,11 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/cell-renders-transparent/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/nih-previews/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/biology-teaching-demo/jpg/*
+  Cache-Control: public, max-age=31536000, immutable

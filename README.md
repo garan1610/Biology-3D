@@ -8,24 +8,27 @@
 ![Verification](https://img.shields.io/badge/verification-playwright%20screenshots-2ea44f)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Status](https://img.shields.io/badge/status-local%20prototype-f59e0b)
-[![Live Demo](https://img.shields.io/badge/live-demo-16a34a)](https://cell-architecture-studio-inky.vercel.app)
+[![Live Demo](https://img.shields.io/badge/live-demo-16a34a)](https://cell-architecture-studio.lanshuagent.com/)
 
 An interactive cell architecture gallery built with React, Vite, Three.js, and staged GLB or procedural 3D cell assets. The project recreates a premium educational biology interface with selectable cell types, organelle details, comparison mode, responsive layout, and visual verification coverage.
 
 ## Live Demo
 
-[Open the live Vercel deployment](https://cell-architecture-studio-inky.vercel.app)
+[Open the live deployment](https://cell-architecture-studio.lanshuagent.com/)
 
-[![Cell Architecture Studio demo](docs/media/cell-architecture-studio-demo.gif)](https://cell-architecture-studio-inky.vercel.app)
+[![Cell Architecture Studio demo](docs/media/cell-architecture-studio-demo.gif)](https://cell-architecture-studio.lanshuagent.com/)
 
 [View the MP4 demo file](docs/media/cell-architecture-studio-demo.mp4)
 
 ## Highlights
 
 - Seven specimen views: plant cell, white blood cell, neuron, epithelial cell, bacteria cell, animal cell, and muscle cell.
-- High fidelity Plant Cell and White Blood Cell GLB rendering with native texture preservation.
+- High fidelity Plant Cell, White Blood Cell, and Muscle Cell GLB rendering with native texture preservation.
 - Mesh first experience with 3D canvas rendering as the default view.
-- AI Tutor panel with learning prompts, lesson focus, and mastery tracking.
+- AI Tutor panel with optional server-side OpenAI Responses API support, local fallback answers, learning prompts, lesson focus, and mastery tracking.
+- Shareable lesson presets that open a specific cell, organelle, process step, view mode, and language from the URL.
+- Biochemical process explorer with playback, speed, scrubber, linked organelle focus, and 3D semantic overlays.
+- Model Atlas panel that exposes GLB/PBR/procedural status, source metadata, learning coverage, and next 3D upgrade targets.
 - Model loading overlay for large GLB assets on slower networks.
 - Procedural fallback geometry for specimens that do not yet have production GLB assets.
 - Detail panel for organelles, microscope modes, specimen metadata, and comparison workflow.
@@ -45,6 +48,7 @@ An interactive cell architecture gallery built with React, Vite, Three.js, and s
 | App | React 19, TypeScript, Vite |
 | 3D | Three.js, React Three Fiber, Drei |
 | UI | CSS modules in `src/styles.css`, Lucide icons |
+| Tutor API | Cloudflare Pages Function `functions/api/tutor.js` with a legacy-compatible `api/tutor.js` adapter |
 | Assets | GLB models, transparent PNG thumbnails, NIH previews |
 | Verification | Playwright Core, PNG pixel metrics |
 
@@ -60,6 +64,8 @@ An interactive cell architecture gallery built with React, Vite, Three.js, and s
 |   |-- cell-renders-transparent/
 |   |-- models/
 |   `-- nih-previews/
+|-- api/
+|   `-- tutor.js
 |-- scripts/
 |   `-- verify.mjs
 `-- src/
@@ -89,11 +95,28 @@ Open the app:
 http://127.0.0.1:5173/
 ```
 
+Optional AI Tutor API:
+
+```bash
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Set these on Cloudflare Pages for the `functions/api/tutor.js` endpoint. Plain `npm run dev` starts Vite only, so local browser sessions fall back to the local concept tutor. The browser never receives the API key.
+
 Build for production:
 
 ```bash
 npm run build
 ```
+
+Build for Cloudflare Pages with GLB models served from R2:
+
+```bash
+VITE_MODEL_ASSET_BASE_URL=https://assets.example.com VITE_MODEL_ASSET_CACHE_SUFFIX=.bin npm run build:cloudflare
+```
+
+See `docs/CLOUDFLARE_DEPLOYMENT.md` for the R2 upload command, Pages environment variables, caching headers, and function routing.
 
 Run visual verification:
 
@@ -104,14 +127,16 @@ npm run verify
 ## Asset Notes
 
 The highest fidelity specimens are loaded from `public/models/` and configured in `src/data/cells.ts`.
+For Cloudflare Pages deployments, set `VITE_MODEL_ASSET_BASE_URL` so these GLB URLs resolve through the R2 asset domain instead of being uploaded as Pages assets.
 
 | Specimen | Current asset |
 | --- | --- |
-| Plant Cell | `public/models/plant-cell-first001.glb` |
+| Plant Cell | `public/models/plant-cell-3d-model-tripo-v3.glb` |
 | White Blood Cell | `public/models/white-blood-cell-user.glb` |
 | Animal Cell | `public/models/animal-cell-nih.glb` |
 | Neuron | `public/models/neuron-nih.glb` |
 | Bacteria Wall | `public/models/bacteria-wall-nih.glb` |
+| Muscle Cell | `public/models/muscle-cell-tripo-skeletal-fiber-textured-pbr.glb` |
 
 Transparent PNG references in `public/cell-renders-transparent/` are used for thumbnails and model previews. Detailed provenance is tracked in `docs/ASSETS.md`.
 
@@ -124,16 +149,22 @@ Current coverage includes:
 - Desktop, compact, and mobile smoke checks.
 - Plant Cell GLB render check.
 - White Blood Cell GLB render check.
+- Animal, Muscle, and Bacteria model render checks.
+- AI Tutor local fallback and mocked API response checks.
+- Library search, process jump, Settings controls, and bilingual search checks.
+- Lesson preset deep links, lesson picker state, and demo-to-3D study links.
+- Microscope upload, zoom, channel, marker, persisted annotation save/restore, and localization checks.
+- Model Atlas coverage, localization, and model open action checks.
+- Reaction readouts for biochemical process simulations, including progress-linked values and localization.
 - Bacteria mesh interaction check.
 - Comparison modal check.
 
 ## Roadmap
 
-- Add production quality GLB models for the remaining specimens.
+- Add a production quality Epithelial Cell GLB while keeping the procedural model as fallback.
 - Add lazy loading and route level code splitting for 3D bundles.
-- Expand educational annotations for each organelle.
-- Add screenshot export and 3D export workflows.
-- Add asset license metadata directly into the UI.
+- Expand lesson presets into teacher-authored classroom sequences for each organelle.
+- Turn Model Atlas into an import and QA workflow for future GLB/PBR candidates.
 
 ## License
 

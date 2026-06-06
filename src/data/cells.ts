@@ -64,6 +64,14 @@ export type CellItem = {
   organelles: OrganelleItem[];
 };
 
+const modelAssetBaseUrl = (import.meta.env.VITE_MODEL_ASSET_BASE_URL ?? "").trim().replace(/\/+$/, "");
+const modelAssetCacheSuffix = (import.meta.env.VITE_MODEL_ASSET_CACHE_SUFFIX ?? "").trim();
+
+function modelAssetUrl(path: `/models/${string}`) {
+  const assetPath = modelAssetCacheSuffix ? `${path}${modelAssetCacheSuffix}` : path;
+  return modelAssetBaseUrl ? `${modelAssetBaseUrl}${assetPath}` : assetPath;
+}
+
 export const cells: CellItem[] = [
   {
     id: "plant",
@@ -80,12 +88,12 @@ export const cells: CellItem[] = [
       aspect: "square",
     },
     modelAsset: {
-      url: "/models/plant-cell-first001.glb",
+      url: modelAssetUrl("/models/plant-cell-3d-model-tripo-v3.glb"),
       previewUrl: "/cell-renders-transparent/plant.png",
-      sourceLabel: "User Plant Cell GLB first001",
-      sourceUrl: "local:/Users/lank/Downloads/first001.glb",
+      sourceLabel: "Tripo Plant Cell GLB v3 PBR",
+      sourceUrl: "local:/Users/lank/Downloads/plant+cell+3d+model.glb",
       scale: 2.58,
-      rotation: [0.08, -1.42, -0.02],
+      rotation: [0.92, 0.18, -0.02],
       exposure: 1.08,
       materialMode: "native",
     },
@@ -173,7 +181,7 @@ export const cells: CellItem[] = [
       aspect: "square",
     },
     modelAsset: {
-      url: "/models/white-blood-cell-user.glb",
+      url: modelAssetUrl("/models/white-blood-cell-user.glb"),
       previewUrl: "/cell-renders-transparent/white-blood.png",
       sourceLabel: "User White Blood Cell GLB",
       sourceUrl: "local:/Users/lank/Downloads/second.glb",
@@ -252,7 +260,7 @@ export const cells: CellItem[] = [
       aspect: "wide",
     },
     modelAsset: {
-      url: "/models/neuron-nih.glb",
+      url: modelAssetUrl("/models/neuron-nih.glb"),
       previewUrl: "/nih-previews/neuron-nih.png",
       sourceLabel: "NIH 3D Neuron",
       sourceUrl: "https://3d.nih.gov/entries/3DPX-015796/2",
@@ -400,7 +408,7 @@ export const cells: CellItem[] = [
       aspect: "landscape",
     },
     modelAsset: {
-      url: "/models/bacteria-wall-nih.glb",
+      url: modelAssetUrl("/models/bacteria-wall-nih.glb"),
       previewUrl: "/nih-previews/bacteria-wall-nih.png",
       sourceLabel: "NIH 3D Gram Positive Cell Wall",
       sourceUrl: "https://3d.nih.gov/entries/3DPX-010752/2",
@@ -479,7 +487,7 @@ export const cells: CellItem[] = [
       aspect: "square",
     },
     modelAsset: {
-      url: "/models/animal-cell-nih.glb",
+      url: modelAssetUrl("/models/animal-cell-nih.glb"),
       previewUrl: "/nih-previews/animal-cell-nih.png",
       sourceLabel: "NIH 3D Animal Cell",
       sourceUrl: "https://3d.nih.gov/entries/3DPX-015797/2",
@@ -528,6 +536,34 @@ export const cells: CellItem[] = [
         fact: "Not all animal cells keep a nucleus. Mature red blood cells lose theirs.",
       },
       {
+        id: "ribosome",
+        name: "Ribosome",
+        subtitle: "The protein builder",
+        color: "#4f8fd6",
+        attributes: [
+          { label: "Size", value: "About 20 to 30 nm" },
+          { label: "Role", value: "Translation" },
+          { label: "Location", value: "Cytoplasm and rough ER" },
+        ],
+        note:
+          "Ribosomes read messenger RNA and join amino acids into protein chains that can fold or move into the ER.",
+        fact: "A single active cell can contain millions of ribosomes.",
+      },
+      {
+        id: "membrane",
+        name: "Cell Membrane",
+        subtitle: "The selective border",
+        color: "#4f9f83",
+        attributes: [
+          { label: "Structure", value: "Phospholipid bilayer" },
+          { label: "Role", value: "Selective transport" },
+          { label: "Proteins", value: "Channels and pumps" },
+        ],
+        note:
+          "The cell membrane separates the cell from its surroundings while transport proteins and vesicles move selected cargo.",
+        fact: "Membranes are fluid: many proteins drift within the lipid bilayer.",
+      },
+      {
         id: "golgi",
         name: "Golgi Apparatus",
         subtitle: "The packaging stack",
@@ -556,6 +592,16 @@ export const cells: CellItem[] = [
     renderImage: {
       url: "/cell-renders-transparent/muscle.png",
       aspect: "wide",
+    },
+    modelAsset: {
+      url: modelAssetUrl("/models/muscle-cell-tripo-skeletal-fiber-textured-pbr.glb"),
+      previewUrl: "/cell-renders-transparent/muscle.png",
+      sourceLabel: "Tripo Skeletal Muscle Fiber GLB PBR",
+      sourceUrl: "local:/Users/lank/Downloads/skeletal+muscle+fiber+textured+pbr.glb",
+      scale: 4.12,
+      rotation: [0.12, -0.34, -0.03],
+      exposure: 1.1,
+      materialMode: "native",
     },
     occurrence: {
       title: "Skeletal muscles",

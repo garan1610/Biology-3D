@@ -2,6 +2,36 @@ node_modules/
 dist/
 verification/
 docs/PRD.md
+docs/CLOUDFLARE_DEPLOYMENT.md
+docs/cloudflare-r2-cors.example.json
+
+.baoyu-skills/
+.wrangler/
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Large local asset working files. Production loads these from Cloudflare R2.
+public/models/plant-cell-3d-model-tripo-v3.glb
+public/models/plant-cell-model-3d-tripo.glb
+public/models/muscle-cell-tripo-skeletal-fiber*.glb
+
+# Generated reference batches kept local unless explicitly curated for the app.
+public/texture-references/batch-2026-05-27-tripo-candidates/
+public/texture-references/gpt-image-2-2026-05-27/
+public/texture-references/gpt-image-2-biology-3d-references-2026-05-31/
+public/texture-references/gpt-image-2-biology-teaching-annotations-2026-05-31/
+public/texture-references/gpt-image-2-education-2026-05-28/
+public/texture-references/gpt-image-2-education-realism-2026-05-28/
+public/texture-references/gpt-image-2-education-volume2-2026-06-05/
+public/texture-references/gpt-image-2-education-volume3-2026-06-05/
+public/texture-references/gpt-image-2-education-volume4-2026-06-05/
+public/texture-references/gpt-image-2-llm-realism-2026-05-28/
+public/texture-references/gpt-image-2-virus-2026-05-28/
+public/texture-references/gpt-image-2-worldcup-stars-2026-05-28/
+public/texture-references/plant-cell-*.jpg
+public/texture-references/plant-cell-*.png
 
 .DS_Store
 *.local

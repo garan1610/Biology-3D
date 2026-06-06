@@ -9,12 +9,14 @@
   "bugs": {
     "url": "https://github.com/cclank/cell-architecture-studio/issues"
   },
-  "homepage": "https://github.com/cclank/cell-architecture-studio#readme",
+  "homepage": "https://cell-architecture-studio.lanshuagent.com/",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:cloudflare": "tsc -b && CLOUDFLARE_R2_ASSET_BUILD=1 vite build",
     "preview": "vite preview",
+    "upload:r2-models": "node scripts/upload-r2-models.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {

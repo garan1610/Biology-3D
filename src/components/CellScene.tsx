@@ -57,6 +57,12 @@ type CellSceneProps = {
   viewMode: ViewMode;
   crossSection: boolean;
   autoRotate: boolean;
+  renderQuality?: "balanced" | "high";
+  processSimulationProgress?: number;
+  processSimulationRunning?: boolean;
+  activeProcessId?: string;
+  activeProcessStepId?: string;
+  onAutoRotateChange?: (value: boolean) => void;
   resetKey: number;
 };
 
@@ -422,6 +428,13 @@ type CommonModelProps = {
   crossSection: boolean;
 };
 
+type ProcessModelProps = CommonModelProps & {
+  activeProcessId?: string;
+  activeProcessStepId?: string;
+  processSimulationProgress?: number;
+  processSimulationRunning?: boolean;
+};
+
 function applyAssetVertexColors(mesh: Mesh, cell: CellItem) {
   const geometry = mesh.geometry;
   const position = geometry.getAttribute("position");
@@ -508,6 +521,7 @@ function getNativeAssetPreset(asset: CellModelAsset) {
   const assetKey = `${asset.url} ${asset.sourceLabel}`.toLowerCase();
   const isWhiteBlood = assetKey.includes("white-blood");
   const isPlant = assetKey.includes("plant");
+  const isMuscle = assetKey.includes("muscle");
 
   if (isWhiteBlood) {
     return {
@@ -515,6 +529,7 @@ function getNativeAssetPreset(asset: CellModelAsset) {
       color: new Color(1.045, 1.035, 1.055),
       roughness: 0.34,
       metalness: 0.01,
+      useTextureRoughness: true,
       emissive: new Color("#f7efff"),
       emissiveIntensity: 0.018,
       envMapIntensity: 1.42,
@@ -554,14 +569,15 @@ function getNativeAssetPreset(asset: CellModelAsset) {
     return {
       anisotropy: 16,
       color: new Color(1.035, 1.025, 0.965),
-      roughness: 0.46,
-      metalness: 0.015,
+      roughness: 0.74,
+      metalness: 0,
+      useTextureRoughness: false,
       emissive: new Color("#fff1d5"),
       emissiveIntensity: 0.012,
-      envMapIntensity: 1.34,
+      envMapIntensity: 1.05,
       bumpScale: 0.045,
       normalStrength: 6.1,
-      normalScale: 0.54,
+      normalScale: 0.18,
       edgeStrength: 10.8,
       heightLuminance: 0.64,
       heightSaturation: 0.54,
@@ -572,21 +588,63 @@ function getNativeAssetPreset(asset: CellModelAsset) {
       aoIntensity: 0.62,
       aoFromDark: 0.24,
       aoFromEdges: 0.24,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.62,
-      sheen: 0.1,
-      sheenRoughness: 0.74,
+      clearcoat: 0.05,
+      clearcoatRoughness: 0.82,
+      sheen: 0.04,
+      sheenRoughness: 0.86,
       sheenColor: new Color("#f2e4b1"),
       ior: 1.38,
-      reflectivity: 0.38,
-      transmission: 0.015,
+      reflectivity: 0.18,
+      transmission: 0,
       thickness: 0.22,
       attenuationDistance: 3.8,
       attenuationColor: new Color("#fff2cf"),
-      specularIntensity: 0.46,
-      specularColor: new Color("#fff8e9"),
+      specularIntensity: 0.16,
+      specularColor: new Color("#f0dfbe"),
       opacity: 1,
       crossSectionOpacity: 0.84,
+      transparent: false,
+    };
+  }
+
+  if (isMuscle) {
+    return {
+      anisotropy: 16,
+      color: new Color(1.06, 0.98, 0.98),
+      roughness: 0.56,
+      metalness: 0,
+      useTextureRoughness: true,
+      emissive: new Color("#ffd8d3"),
+      emissiveIntensity: 0.014,
+      envMapIntensity: 1.18,
+      bumpScale: 0.025,
+      normalStrength: 5.2,
+      normalScale: 0.38,
+      edgeStrength: 9.4,
+      heightLuminance: 0.68,
+      heightSaturation: 0.46,
+      roughnessBase: 0.34,
+      roughnessFromDark: 0.14,
+      roughnessFromSaturation: 0.22,
+      roughnessFromEdges: 0.16,
+      aoIntensity: 0.58,
+      aoFromDark: 0.24,
+      aoFromEdges: 0.18,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.68,
+      sheen: 0.16,
+      sheenRoughness: 0.78,
+      sheenColor: new Color("#ffc6c0"),
+      ior: 1.37,
+      reflectivity: 0.28,
+      transmission: 0.01,
+      thickness: 0.26,
+      attenuationDistance: 3.1,
+      attenuationColor: new Color("#ffd6d2"),
+      specularIntensity: 0.34,
+      specularColor: new Color("#fff0ef"),
+      opacity: 1,
+      crossSectionOpacity: 0.82,
       transparent: false,
     };
   }
@@ -596,6 +654,7 @@ function getNativeAssetPreset(asset: CellModelAsset) {
     color: new Color(1.015, 1.01, 0.995),
     roughness: 0.48,
     metalness: 0.03,
+    useTextureRoughness: true,
     emissive: new Color("#fff4e5"),
     emissiveIntensity: 0.02,
     envMapIntensity: 1.16,
@@ -657,8 +716,10 @@ function createNativeAssetMaterial({
             color: sourceMaterial.color,
             map: displayMap,
             normalMap: sourceMaterial.normalMap ?? generatedMaps?.normalMap ?? null,
-            roughnessMap: sourceMaterial.roughnessMap ?? generatedMaps?.roughnessMap ?? null,
-            metalnessMap: sourceMaterial.metalnessMap,
+            roughnessMap: nativePreset.useTextureRoughness
+              ? sourceMaterial.roughnessMap ?? generatedMaps?.roughnessMap ?? null
+              : null,
+            metalnessMap: null,
             alphaMap: sourceMaterial.alphaMap,
             aoMap: sourceMaterial.aoMap ?? generatedMaps?.aoMap ?? null,
             aoMapIntensity: generatedMaps?.aoMap ? nativePreset.aoIntensity : 1,
@@ -1383,28 +1444,1485 @@ function MuscleModel({ activeOrganelle, viewMode, crossSection }: CommonModelPro
   );
 }
 
+function PhotosynthesisParticles({
+  activeProcessStepId,
+}: {
+  activeProcessStepId?: string;
+}) {
+  const photonRef = useRef<Group | null>(null);
+  const electronRef = useRef<Group | null>(null);
+  const sugarRef = useRef<Group | null>(null);
+  const photonActive = activeProcessStepId === "light-capture";
+  const electronActive = activeProcessStepId === "electron-flow";
+  const sugarActive = activeProcessStepId === "carbon-fixation";
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    if (photonRef.current) {
+      photonRef.current.position.x = Math.sin(time * 1.8) * 0.08;
+      photonRef.current.position.y = Math.cos(time * 1.4) * 0.04;
+    }
+    if (electronRef.current) {
+      electronRef.current.rotation.z = time * 1.15;
+    }
+    if (sugarRef.current) {
+      sugarRef.current.rotation.y = time * 0.72;
+      sugarRef.current.scale.setScalar(1 + Math.sin(time * 2.4) * 0.05);
+    }
+  });
+
+  return (
+    <>
+      <group ref={photonRef} visible={photonActive} position={[-0.82, 0.52, 0.34]} rotation={[0.2, 0, -0.54]}>
+        {Array.from({ length: 7 }, (_, index) => (
+          <mesh key={index} position={[index * 0.16, 0, 0]} castShadow>
+            <sphereGeometry args={[0.026 + (index % 2) * 0.01, 16, 16]} />
+            <meshStandardMaterial color="#ffe27a" emissive="#ffe27a" emissiveIntensity={1.35} />
+          </mesh>
+        ))}
+        <CurveTube
+          id="chloroplast"
+          color="#f7d86a"
+          points={[
+            [-0.06, 0, 0],
+            [0.34, -0.02, 0.01],
+            [0.82, 0.04, -0.02],
+          ]}
+          radius={0.014}
+          activeOrganelle="chloroplast"
+          viewMode="mesh"
+        />
+      </group>
+
+      <group ref={electronRef} visible={electronActive} position={[0.02, 0.02, 0.22]}>
+        {[0, 1, 2, 3, 4, 5].map((index) => {
+          const angle = (index / 6) * Math.PI * 2;
+          return (
+            <mesh key={index} position={[Math.cos(angle) * 0.42, Math.sin(angle) * 0.18, 0.02]} castShadow>
+              <sphereGeometry args={[0.032, 16, 16]} />
+              <meshStandardMaterial color="#8ff1c5" emissive="#5edfa9" emissiveIntensity={1.05} />
+            </mesh>
+          );
+        })}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.42, 0.01, 8, 80]} />
+          <meshStandardMaterial color="#68d6a1" emissive="#68d6a1" emissiveIntensity={0.65} />
+        </mesh>
+      </group>
+
+      <group ref={sugarRef} visible={sugarActive} position={[0.46, -0.22, 0.28]}>
+        {Array.from({ length: 6 }, (_, index) => {
+          const angle = (index / 6) * Math.PI * 2;
+          return (
+            <mesh key={index} position={[Math.cos(angle) * 0.12, Math.sin(angle) * 0.12, 0]} castShadow>
+              <sphereGeometry args={[0.04, 18, 18]} />
+              <meshStandardMaterial color="#f7c96f" emissive="#f2a93b" emissiveIntensity={0.65} />
+            </mesh>
+          );
+        })}
+        <mesh position={[0, 0, 0]} castShadow>
+          <sphereGeometry args={[0.046, 18, 18]} />
+          <meshStandardMaterial color="#fff0aa" emissive="#ffcc63" emissiveIntensity={0.72} />
+        </mesh>
+      </group>
+    </>
+  );
+}
+
+function ThylakoidStack({
+  position,
+  active,
+  activeOrganelle,
+  viewMode,
+}: {
+  position: [number, number, number];
+  active: boolean;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  return (
+    <group position={position} rotation={[0.1, 0.2, -0.08]}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <mesh key={index} position={[0, index * 0.028, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.14, 0.16, 0.026, 36]} />
+          <CellMaterial
+            id="chloroplast"
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={active ? "#a7e660" : "#78bc46"}
+            opacity={0.96}
+            roughness={0.38}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function SemanticChloroplastModel({
+  activeOrganelle,
+  viewMode,
+  crossSection,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+}: ProcessModelProps) {
+  const rootRef = useRef<Group | null>(null);
+  const processActive = activeProcessId === "photosynthesis";
+  const chloroplastSelected = activeOrganelle === "chloroplast";
+  const stepActive = processActive ? activeProcessStepId || "light-capture" : "";
+  const visibleDetail = chloroplastSelected || processActive || viewMode === "focus";
+
+  useFrame(({ clock }) => {
+    if (!rootRef.current) {
+      return;
+    }
+    const pulse =
+      processActive
+        ? 1 + Math.sin((clock.elapsedTime * (processSimulationRunning ? 1.5 : 0.55) + processSimulationProgress * 6.28) * 1.4) * 0.026
+        : 1;
+    rootRef.current.rotation.z = -0.28 + Math.sin(clock.elapsedTime * 0.55) * 0.025;
+    rootRef.current.scale.setScalar(0.34 * pulse);
+  });
+
+  if (!visibleDetail) {
+    return null;
+  }
+
+  return (
+    <group
+      ref={rootRef}
+      name="semantic-chloroplast-overlay"
+      position={[0.03, 0.08, 0.54]}
+      rotation={[0.36, -0.22, -0.28]}
+      scale={[0.34, 0.34, 0.34]}
+    >
+      <mesh scale={[0.72, 0.34, 0.2]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 64, 32]} />
+        <CellMaterial
+          id="chloroplast"
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color={processActive ? "#6fc24d" : "#67ad46"}
+          opacity={crossSection ? 0.42 : 0.58}
+          roughness={0.36}
+        />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.58, 1]}>
+        <torusGeometry args={[0.68, 0.018, 12, 96]} />
+        <CellMaterial
+          id="chloroplast"
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color="#c2e685"
+          opacity={0.9}
+          roughness={0.34}
+        />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[0.82, 0.48, 1]}>
+        <torusGeometry args={[0.5, 0.01, 10, 80]} />
+        <CellMaterial
+          id="chloroplast"
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color="#d8ef9b"
+          opacity={0.72}
+          roughness={0.42}
+        />
+      </mesh>
+
+      <ThylakoidStack
+        position={[-0.28, -0.08, 0.12]}
+        active={stepActive === "light-capture" || stepActive === "electron-flow"}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <ThylakoidStack
+        position={[0.02, 0.08, 0.14]}
+        active={stepActive === "electron-flow"}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <ThylakoidStack
+        position={[0.32, -0.02, 0.12]}
+        active={stepActive === "light-capture" || stepActive === "carbon-fixation"}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+
+      <CurveTube
+        id="chloroplast"
+        color="#b7df62"
+        points={[
+          [-0.48, -0.12, 0.16],
+          [-0.18, 0.12, 0.2],
+          [0.2, -0.04, 0.18],
+          [0.48, 0.1, 0.15],
+        ]}
+        radius={0.018}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <PhotosynthesisParticles activeProcessStepId={stepActive} />
+    </group>
+  );
+}
+
+function RespirationParticles({
+  activeProcessStepId,
+  organelleId,
+  activeOrganelle,
+  viewMode,
+}: {
+  activeProcessStepId?: string;
+  organelleId: string;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  const pyruvateRef = useRef<Group | null>(null);
+  const carrierRef = useRef<Group | null>(null);
+  const atpRef = useRef<Group | null>(null);
+  const pyruvateActive = activeProcessStepId === "glycolysis";
+  const carrierActive = activeProcessStepId === "krebs-cycle";
+  const atpActive = activeProcessStepId === "oxidative-phosphorylation";
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    if (pyruvateRef.current) {
+      pyruvateRef.current.position.x = -0.76 + Math.sin(time * 1.8) * 0.06;
+    }
+    if (carrierRef.current) {
+      carrierRef.current.rotation.z = time * 1.05;
+    }
+    if (atpRef.current) {
+      atpRef.current.rotation.y = time * 1.35;
+      atpRef.current.scale.setScalar(1 + Math.sin(time * 3.1) * 0.06);
+    }
+  });
+
+  return (
+    <>
+      <group ref={pyruvateRef} visible={pyruvateActive} position={[-0.76, -0.02, 0.08]}>
+        {Array.from({ length: 4 }, (_, index) => (
+          <mesh key={index} position={[index * 0.16, Math.sin(index) * 0.04, 0]} castShadow>
+            <sphereGeometry args={[0.038, 16, 16]} />
+            <meshStandardMaterial color="#f5a35e" emissive="#e97335" emissiveIntensity={0.72} />
+          </mesh>
+        ))}
+        <CurveTube
+          id={organelleId}
+          color="#f2a35d"
+          points={[
+            [-0.05, 0, 0],
+            [0.2, 0.05, 0.02],
+            [0.48, -0.03, 0.02],
+            [0.72, 0.04, 0],
+          ]}
+          radius={0.014}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+      </group>
+
+      <group ref={carrierRef} visible={carrierActive} position={[0, 0, 0.18]}>
+        {[0, 1, 2, 3, 4, 5].map((index) => {
+          const angle = (index / 6) * Math.PI * 2;
+          return (
+            <mesh key={index} position={[Math.cos(angle) * 0.36, Math.sin(angle) * 0.16, 0.02]} castShadow>
+              <sphereGeometry args={[0.032, 16, 16]} />
+              <meshStandardMaterial color="#ffd18b" emissive="#ff9f47" emissiveIntensity={0.95} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      <group ref={atpRef} visible={atpActive} position={[0.48, 0.18, 0.18]}>
+        {Array.from({ length: 3 }, (_, index) => (
+          <group key={index} position={[index * 0.13, Math.sin(index * 1.7) * 0.05, 0]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.042, 18, 18]} />
+              <meshStandardMaterial color="#fff1a8" emissive="#ffc14d" emissiveIntensity={0.95} />
+            </mesh>
+            <mesh position={[0.055, 0.028, 0]} castShadow>
+              <sphereGeometry args={[0.026, 16, 16]} />
+              <meshStandardMaterial color="#f8c55d" emissive="#ff9f3d" emissiveIntensity={0.7} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    </>
+  );
+}
+
+function CristaFold({
+  y,
+  active,
+  activeOrganelle,
+  viewMode,
+}: {
+  y: number;
+  active: boolean;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  return (
+    <CurveTube
+      id={activeOrganelle === "mitochondria" ? "mitochondria" : "mitochondrion"}
+      color={active ? "#ffd08a" : "#f0a66b"}
+      points={[
+        [-0.46, y, 0.16],
+        [-0.28, y + 0.08, 0.2],
+        [-0.08, y - 0.08, 0.18],
+        [0.12, y + 0.08, 0.2],
+        [0.32, y - 0.04, 0.16],
+        [0.48, y + 0.04, 0.16],
+      ]}
+      radius={active ? 0.024 : 0.018}
+      activeOrganelle={activeOrganelle}
+      viewMode={viewMode}
+    />
+  );
+}
+
+function SemanticMitochondrionModel({
+  cell,
+  activeOrganelle,
+  viewMode,
+  crossSection,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+}: ProcessModelProps & {
+  cell: CellItem;
+}) {
+  const rootRef = useRef<Group | null>(null);
+  const processActive = activeProcessId === "cell-respiration";
+  const mitochondrionSelected = activeOrganelle === "mitochondrion" || activeOrganelle === "mitochondria";
+  const stepActive = processActive ? activeProcessStepId || "glycolysis" : "";
+  const visibleDetail = mitochondrionSelected || processActive;
+  const organelleId = cell.id === "muscle" ? "mitochondria" : "mitochondrion";
+  const placement =
+    cell.id === "muscle"
+      ? { position: [-0.42, 0.32, 0.55] as [number, number, number], scale: 0.44, rotation: [0.2, -0.2, 0.1] as [number, number, number] }
+      : cell.id === "plant"
+        ? { position: [0.42, -0.62, 0.48] as [number, number, number], scale: 0.32, rotation: [0.2, -0.22, -0.18] as [number, number, number] }
+        : { position: [-0.36, 0.06, 0.52] as [number, number, number], scale: 0.42, rotation: [0.22, -0.28, -0.18] as [number, number, number] };
+
+  useFrame(({ clock }) => {
+    if (!rootRef.current) {
+      return;
+    }
+    const pulse =
+      processActive
+        ? 1 + Math.sin((clock.elapsedTime * (processSimulationRunning ? 1.55 : 0.58) + processSimulationProgress * 6.28) * 1.5) * 0.024
+        : 1;
+    rootRef.current.rotation.z = placement.rotation[2] + Math.sin(clock.elapsedTime * 0.68) * 0.035;
+    rootRef.current.scale.setScalar(placement.scale * pulse);
+  });
+
+  if (!visibleDetail) {
+    return null;
+  }
+
+  return (
+    <group
+      ref={rootRef}
+      name="semantic-mitochondrion-overlay"
+      position={placement.position}
+      rotation={placement.rotation}
+      scale={[placement.scale, placement.scale, placement.scale]}
+    >
+      <mesh scale={[0.74, 0.36, 0.22]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 64, 32]} />
+        <CellMaterial
+          id={organelleId}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color={processActive ? "#de7c3e" : "#cf7042"}
+          opacity={crossSection ? 0.44 : 0.66}
+          roughness={0.4}
+        />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.56, 1]}>
+        <torusGeometry args={[0.66, 0.018, 12, 96]} />
+        <CellMaterial
+          id={organelleId}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color="#f5b06a"
+          opacity={0.9}
+          roughness={0.36}
+        />
+      </mesh>
+      {[-0.18, -0.06, 0.06, 0.18].map((y) => (
+        <CristaFold
+          key={y}
+          y={y}
+          active={stepActive === "krebs-cycle" || stepActive === "oxidative-phosphorylation"}
+          activeOrganelle={organelleId}
+          viewMode={viewMode}
+        />
+      ))}
+      <RespirationParticles
+        activeProcessStepId={stepActive}
+        organelleId={organelleId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+    </group>
+  );
+}
+
+function getProteinAnchorId(cell: CellItem) {
+  if (cell.id === "bacteria") {
+    return "nucleoid";
+  }
+  if (cell.id === "neuron") {
+    return "soma";
+  }
+  return cell.organelles.some((organelle) => organelle.id === "nucleus") ? "nucleus" : cell.defaultOrganelle;
+}
+
+function getProteinSortingId(cell: CellItem) {
+  if (cell.organelles.some((organelle) => organelle.id === "golgi")) {
+    return "golgi";
+  }
+  if (cell.organelles.some((organelle) => organelle.id === "granules")) {
+    return "granules";
+  }
+  return getProteinAnchorId(cell);
+}
+
+function getProteinBiosynthesisPlacement(cell: CellItem) {
+  if (cell.id === "plant") {
+    return {
+      position: [0.52, 0.2, 0.54] as [number, number, number],
+      scale: 0.31,
+      rotation: [0.2, -0.18, -0.16] as [number, number, number],
+    };
+  }
+  if (cell.id === "muscle") {
+    return {
+      position: [-0.08, 0.48, 0.5] as [number, number, number],
+      scale: 0.4,
+      rotation: [0.18, -0.24, 0.08] as [number, number, number],
+    };
+  }
+  if (cell.id === "neuron") {
+    return {
+      position: [-0.58, 0.12, 0.34] as [number, number, number],
+      scale: 0.38,
+      rotation: [0.18, -0.18, -0.08] as [number, number, number],
+    };
+  }
+  if (cell.id === "bacteria") {
+    return {
+      position: [0, 0.02, 0.36] as [number, number, number],
+      scale: 0.34,
+      rotation: [0.1, -0.14, -0.12] as [number, number, number],
+    };
+  }
+  return {
+    position: [0.18, -0.03, 0.58] as [number, number, number],
+    scale: 0.42,
+    rotation: [0.2, -0.24, -0.14] as [number, number, number],
+  };
+}
+
+function ProteinBiosynthesisParticles({
+  activeProcessStepId,
+  activeStructureId,
+  activeOrganelle,
+  viewMode,
+}: {
+  activeProcessStepId?: string;
+  activeStructureId: string;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  const mrnaRef = useRef<Group | null>(null);
+  const translationRef = useRef<Group | null>(null);
+  const vesicleRef = useRef<Group | null>(null);
+  const transcriptionActive = activeProcessStepId === "transcription";
+  const translationActive = activeProcessStepId === "translation";
+  const sortingActive = activeProcessStepId === "sorting";
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    if (mrnaRef.current) {
+      mrnaRef.current.position.x = -0.44 + Math.sin(time * 1.7) * 0.05;
+    }
+    if (translationRef.current) {
+      translationRef.current.rotation.z = Math.sin(time * 1.4) * 0.05;
+    }
+    if (vesicleRef.current) {
+      vesicleRef.current.position.x = 0.36 + Math.sin(time * 1.6) * 0.09;
+      vesicleRef.current.position.y = -0.08 + Math.cos(time * 1.2) * 0.035;
+    }
+  });
+
+  return (
+    <>
+      <group ref={mrnaRef} visible={transcriptionActive} position={[-0.44, 0.18, 0.2]} rotation={[0.08, 0, -0.1]}>
+        <CurveTube
+          id={activeStructureId}
+          color="#74c7e8"
+          points={[
+            [-0.22, 0.02, 0],
+            [-0.02, 0.1, 0.02],
+            [0.22, -0.02, 0.02],
+            [0.48, 0.06, 0],
+          ]}
+          radius={0.012}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+        {Array.from({ length: 7 }, (_, index) => (
+          <mesh key={index} position={[-0.2 + index * 0.11, Math.sin(index * 1.4) * 0.035, 0.04]} castShadow>
+            <sphereGeometry args={[0.024, 14, 14]} />
+            <meshStandardMaterial color="#9ee5ff" emissive="#57c6f0" emissiveIntensity={0.72} />
+          </mesh>
+        ))}
+      </group>
+
+      <group ref={translationRef} visible={translationActive} position={[0.06, -0.02, 0.24]}>
+        {[-0.16, 0, 0.16].map((x, index) => (
+          <group key={x} position={[x, 0.16 + Math.sin(index) * 0.02, 0.08]} rotation={[0, 0, 0.24]}>
+            <mesh position={[0, 0.08, 0]} castShadow>
+              <cylinderGeometry args={[0.012, 0.012, 0.2, 10]} />
+              <meshStandardMaterial color="#8fd7cf" emissive="#54bbb4" emissiveIntensity={0.45} />
+            </mesh>
+            <mesh position={[0.02, 0.2, 0]} castShadow>
+              <sphereGeometry args={[0.028, 14, 14]} />
+              <meshStandardMaterial color="#f3c86a" emissive="#f0a941" emissiveIntensity={0.62} />
+            </mesh>
+          </group>
+        ))}
+        {Array.from({ length: 6 }, (_, index) => (
+          <mesh key={index} position={[0.08 + index * 0.07, 0.02 + Math.sin(index) * 0.025, 0.1]} castShadow>
+            <sphereGeometry args={[0.03, 16, 16]} />
+            <meshStandardMaterial color="#f2b46f" emissive="#df7e44" emissiveIntensity={0.58} />
+          </mesh>
+        ))}
+      </group>
+
+      <group ref={vesicleRef} visible={sortingActive} position={[0.36, -0.08, 0.24]}>
+        {Array.from({ length: 4 }, (_, index) => (
+          <mesh key={index} position={[index * 0.1, Math.sin(index * 1.2) * 0.05, 0]} castShadow>
+            <sphereGeometry args={[0.044 - index * 0.003, 18, 18]} />
+            <meshStandardMaterial color="#f2a469" emissive="#dd8152" emissiveIntensity={0.58} />
+          </mesh>
+        ))}
+        <CurveTube
+          id={activeStructureId}
+          color="#d79057"
+          points={[
+            [-0.08, -0.02, 0],
+            [0.12, 0.08, 0.02],
+            [0.36, -0.02, 0.02],
+          ]}
+          radius={0.013}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+      </group>
+    </>
+  );
+}
+
+function SemanticProteinBiosynthesisModel({
+  cell,
+  activeOrganelle,
+  viewMode,
+  crossSection,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+}: ProcessModelProps & {
+  cell: CellItem;
+}) {
+  const rootRef = useRef<Group | null>(null);
+  const processActive = activeProcessId === "protein-biosynthesis";
+  const ribosomeSelected = activeOrganelle === "ribosome";
+  const stepActive = processActive ? activeProcessStepId || "transcription" : "";
+  const visibleDetail = processActive || ribosomeSelected;
+  const anchorId = getProteinAnchorId(cell);
+  const sortingId = getProteinSortingId(cell);
+  const ribosomeId = cell.organelles.some((organelle) => organelle.id === "ribosome") ? "ribosome" : anchorId;
+  const activeStructureId = stepActive === "sorting" ? sortingId : stepActive === "translation" ? ribosomeId : anchorId;
+  const placement = getProteinBiosynthesisPlacement(cell);
+
+  useFrame(({ clock }) => {
+    if (!rootRef.current) {
+      return;
+    }
+    const pulse =
+      processActive
+        ? 1 + Math.sin((clock.elapsedTime * (processSimulationRunning ? 1.45 : 0.52) + processSimulationProgress * 6.28) * 1.6) * 0.024
+        : 1;
+    rootRef.current.rotation.z = placement.rotation[2] + Math.sin(clock.elapsedTime * 0.58) * 0.026;
+    rootRef.current.scale.setScalar(placement.scale * pulse);
+  });
+
+  if (!visibleDetail) {
+    return null;
+  }
+
+  return (
+    <group
+      ref={rootRef}
+      name="semantic-protein-biosynthesis-overlay"
+      position={placement.position}
+      rotation={placement.rotation}
+      scale={[placement.scale, placement.scale, placement.scale]}
+    >
+      <mesh position={[-0.42, 0.12, 0.08]} scale={[0.24, 0.24, 0.12]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 38, 24]} />
+        <CellMaterial
+          id={anchorId}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color={stepActive === "transcription" ? "#8e5ac6" : "#7650a8"}
+          opacity={crossSection ? 0.34 : 0.54}
+          roughness={0.46}
+        />
+      </mesh>
+
+      <CurveTube
+        id={stepActive === "transcription" ? anchorId : ribosomeId}
+        color="#74c7e8"
+        points={[
+          [-0.22, 0.08, 0.14],
+          [-0.02, 0.04, 0.18],
+          [0.22, 0.02, 0.18],
+          [0.5, 0.05, 0.16],
+        ]}
+        radius={stepActive === "translation" ? 0.02 : 0.014}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+
+      <group position={[0.08, -0.02, 0.16]} rotation={[0.12, 0, 0.08]}>
+        <mesh position={[-0.04, 0.05, 0.04]} scale={[0.18, 0.1, 0.08]} castShadow receiveShadow>
+          <sphereGeometry args={[1, 32, 20]} />
+          <CellMaterial
+            id={ribosomeId}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={stepActive === "translation" ? "#5fa2e8" : "#4f8fd6"}
+            opacity={0.9}
+            roughness={0.5}
+          />
+        </mesh>
+        <mesh position={[0.06, -0.05, 0.02]} scale={[0.2, 0.12, 0.08]} castShadow receiveShadow>
+          <sphereGeometry args={[1, 32, 20]} />
+          <CellMaterial
+            id={ribosomeId}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={stepActive === "translation" ? "#75b7ef" : "#669fd8"}
+            opacity={0.9}
+            roughness={0.5}
+          />
+        </mesh>
+      </group>
+
+      <group position={[0.18, -0.28, 0.1]} rotation={[0.08, 0.14, -0.08]}>
+        {[0, 1, 2].map((index) => (
+          <CurveTube
+            key={index}
+            id={stepActive === "sorting" ? sortingId : ribosomeId}
+            color={stepActive === "sorting" ? "#caa4df" : "#b691cc"}
+            points={[
+              [-0.34 + index * 0.12, -0.04, 0.08],
+              [-0.2 + index * 0.12, 0.08, 0.1],
+              [-0.02 + index * 0.12, -0.06, 0.1],
+              [0.16 + index * 0.12, 0.06, 0.08],
+            ]}
+            radius={0.018}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+          />
+        ))}
+        {Array.from({ length: 10 }, (_, index) => (
+          <mesh key={index} position={[-0.34 + index * 0.075, -0.08 + (index % 2) * 0.06, 0.16]} castShadow>
+            <sphereGeometry args={[0.024, 14, 14]} />
+            <meshStandardMaterial color="#5fa2e8" emissive="#3b8ad8" emissiveIntensity={0.38} />
+          </mesh>
+        ))}
+      </group>
+
+      <group position={[0.58, -0.12, 0.16]} rotation={[0.1, 0, 0.12]}>
+        {[0, 1, 2, 3].map((index) => (
+          <mesh key={index} position={[0, index * 0.055, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.15 + index * 0.008, 0.13 + index * 0.008, 0.028, 34]} />
+            <CellMaterial
+              id={sortingId}
+              activeOrganelle={activeOrganelle}
+              viewMode={viewMode}
+              color={stepActive === "sorting" ? "#e2a064" : "#d49057"}
+              opacity={0.82}
+              roughness={0.42}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      <ProteinBiosynthesisParticles
+        activeProcessStepId={stepActive}
+        activeStructureId={activeStructureId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+    </group>
+  );
+}
+
+function getTransportBoundaryId(cell: CellItem) {
+  for (const id of ["membrane", "cellWall", "sarcolemma", "microvilli", "junctions"]) {
+    if (cell.organelles.some((organelle) => organelle.id === id)) {
+      return id;
+    }
+  }
+  return cell.defaultOrganelle;
+}
+
+function getTransportTrafficId(cell: CellItem) {
+  for (const id of ["vacuole", "lysosome", "granules", "golgi"]) {
+    if (cell.organelles.some((organelle) => organelle.id === id)) {
+      return id;
+    }
+  }
+  return getTransportBoundaryId(cell);
+}
+
+function getMembraneTransportPlacement(cell: CellItem) {
+  if (cell.id === "plant") {
+    return {
+      position: [-0.02, -0.46, 0.5] as [number, number, number],
+      scale: 0.34,
+      rotation: [0.18, -0.1, -0.02] as [number, number, number],
+    };
+  }
+  if (cell.id === "muscle") {
+    return {
+      position: [0.36, -0.32, 0.48] as [number, number, number],
+      scale: 0.44,
+      rotation: [0.16, -0.22, 0.08] as [number, number, number],
+    };
+  }
+  if (cell.id === "epithelial") {
+    return {
+      position: [0.02, 0.78, 0.42] as [number, number, number],
+      scale: 0.42,
+      rotation: [0.12, -0.16, 0.02] as [number, number, number],
+    };
+  }
+  if (cell.id === "bacteria") {
+    return {
+      position: [0, -0.3, 0.34] as [number, number, number],
+      scale: 0.34,
+      rotation: [0.08, -0.16, -0.08] as [number, number, number],
+    };
+  }
+  return {
+    position: [-0.05, -0.22, 0.6] as [number, number, number],
+    scale: 0.42,
+    rotation: [0.2, -0.24, -0.08] as [number, number, number],
+  };
+}
+
+function MembraneTransportParticles({
+  activeProcessStepId,
+  activeStructureId,
+  activeOrganelle,
+  viewMode,
+}: {
+  activeProcessStepId?: string;
+  activeStructureId: string;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  const boundaryRef = useRef<Group | null>(null);
+  const ionRef = useRef<Group | null>(null);
+  const vesicleRef = useRef<Group | null>(null);
+  const barrierActive = activeProcessStepId === "selective-barrier";
+  const channelActive = activeProcessStepId === "channels-pumps";
+  const vesicleActive = activeProcessStepId === "vesicle-traffic";
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    if (boundaryRef.current) {
+      boundaryRef.current.rotation.z = Math.sin(time * 0.8) * 0.02;
+    }
+    if (ionRef.current) {
+      ionRef.current.position.y = Math.sin(time * 1.8) * 0.08;
+    }
+    if (vesicleRef.current) {
+      vesicleRef.current.position.x = 0.48 + Math.sin(time * 1.4) * 0.11;
+      vesicleRef.current.scale.setScalar(1 + Math.sin(time * 2.2) * 0.045);
+    }
+  });
+
+  return (
+    <>
+      <group ref={boundaryRef} visible={barrierActive} position={[0, 0, 0.16]}>
+        {[-0.22, 0.22].map((y) => (
+          <group key={y}>
+            {Array.from({ length: 10 }, (_, index) => (
+              <mesh key={index} position={[-0.54 + index * 0.12, y, 0]} castShadow>
+                <sphereGeometry args={[0.024, 14, 14]} />
+                <meshStandardMaterial color="#92d2a9" emissive="#5fb987" emissiveIntensity={0.42} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        <CurveTube
+          id={activeStructureId}
+          color="#80c69a"
+          points={[
+            [-0.58, -0.02, 0.02],
+            [-0.24, 0.02, 0.02],
+            [0.18, -0.02, 0.02],
+            [0.58, 0.02, 0.02],
+          ]}
+          radius={0.01}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+      </group>
+
+      <group ref={ionRef} visible={channelActive} position={[0.05, 0, 0.24]}>
+        {Array.from({ length: 6 }, (_, index) => (
+          <mesh key={index} position={[-0.04 + (index % 2) * 0.08, 0.28 - index * 0.11, 0.02]} castShadow>
+            <sphereGeometry args={[0.028, 16, 16]} />
+            <meshStandardMaterial color={index % 2 === 0 ? "#74d8ff" : "#f7d77d"} emissive="#6ac7e9" emissiveIntensity={0.75} />
+          </mesh>
+        ))}
+        <CurveTube
+          id={activeStructureId}
+          color="#74d8ff"
+          points={[
+            [0, 0.34, 0],
+            [0.02, 0.12, 0.02],
+            [-0.02, -0.12, 0.02],
+            [0, -0.34, 0],
+          ]}
+          radius={0.012}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+      </group>
+
+      <group ref={vesicleRef} visible={vesicleActive} position={[0.48, 0.02, 0.26]}>
+        <mesh scale={[0.14, 0.14, 0.1]} castShadow receiveShadow>
+          <sphereGeometry args={[1, 32, 20]} />
+          <meshStandardMaterial color="#f2b46f" emissive="#df8c4f" emissiveIntensity={0.5} transparent opacity={0.82} />
+        </mesh>
+        {Array.from({ length: 5 }, (_, index) => {
+          const angle = (index / 5) * Math.PI * 2;
+          return (
+            <mesh key={index} position={[Math.cos(angle) * 0.08, Math.sin(angle) * 0.08, 0.04]} castShadow>
+              <sphereGeometry args={[0.022, 14, 14]} />
+              <meshStandardMaterial color="#f7d783" emissive="#f4bd58" emissiveIntensity={0.62} />
+            </mesh>
+          );
+        })}
+      </group>
+    </>
+  );
+}
+
+function SemanticMembraneTransportModel({
+  cell,
+  activeOrganelle,
+  viewMode,
+  crossSection,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+}: ProcessModelProps & {
+  cell: CellItem;
+}) {
+  const rootRef = useRef<Group | null>(null);
+  const processActive = activeProcessId === "membrane-transport";
+  const transportSelected = ["membrane", "cellWall", "sarcolemma", "microvilli", "junctions", "vacuole"].includes(
+    activeOrganelle,
+  );
+  const stepActive = processActive ? activeProcessStepId || "selective-barrier" : "selective-barrier";
+  const visibleDetail = processActive || transportSelected;
+  const boundaryId = getTransportBoundaryId(cell);
+  const trafficId = getTransportTrafficId(cell);
+  const activeStructureId = stepActive === "vesicle-traffic" ? trafficId : boundaryId;
+  const placement = getMembraneTransportPlacement(cell);
+
+  useFrame(({ clock }) => {
+    if (!rootRef.current) {
+      return;
+    }
+    const pulse =
+      processActive
+        ? 1 + Math.sin((clock.elapsedTime * (processSimulationRunning ? 1.5 : 0.55) + processSimulationProgress * 6.28) * 1.55) * 0.022
+        : 1;
+    rootRef.current.rotation.z = placement.rotation[2] + Math.sin(clock.elapsedTime * 0.62) * 0.024;
+    rootRef.current.scale.setScalar(placement.scale * pulse);
+  });
+
+  if (!visibleDetail) {
+    return null;
+  }
+
+  return (
+    <group
+      ref={rootRef}
+      name="semantic-membrane-transport-overlay"
+      position={placement.position}
+      rotation={placement.rotation}
+      scale={[placement.scale, placement.scale, placement.scale]}
+    >
+      {[-0.2, 0.2].map((y) => (
+        <group key={y} position={[0, y, 0.08]}>
+          {Array.from({ length: 12 }, (_, index) => (
+            <mesh key={index} position={[-0.62 + index * 0.112, 0, 0]} castShadow receiveShadow>
+              <sphereGeometry args={[0.035, 16, 16]} />
+              <CellMaterial
+                id={boundaryId}
+                activeOrganelle={activeOrganelle}
+                viewMode={viewMode}
+                color={stepActive === "selective-barrier" ? "#64b98a" : "#4f9f83"}
+                opacity={crossSection ? 0.52 : 0.82}
+                roughness={0.42}
+              />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {Array.from({ length: 11 }, (_, index) => (
+        <mesh key={index} position={[-0.56 + index * 0.112, 0, 0.04]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.008, 0.008, 0.3, 8]} />
+          <meshStandardMaterial color="#88cda3" roughness={0.52} transparent opacity={0.76} />
+        </mesh>
+      ))}
+
+      <group position={[-0.18, 0, 0.16]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.08, 0.08, 0.44, 28]} />
+          <CellMaterial
+            id={boundaryId}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={stepActive === "channels-pumps" ? "#4db9b1" : "#5da994"}
+            opacity={0.9}
+            roughness={0.38}
+          />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.1, 0.012, 10, 40]} />
+          <meshStandardMaterial color="#9ee5df" emissive="#66ccc4" emissiveIntensity={stepActive === "channels-pumps" ? 0.72 : 0.25} />
+        </mesh>
+      </group>
+
+      <group position={[0.24, 0, 0.16]} rotation={[0.12, 0, -0.2]}>
+        <mesh castShadow receiveShadow>
+          <capsuleGeometry args={[0.07, 0.24, 8, 22]} />
+          <CellMaterial
+            id={boundaryId}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={stepActive === "channels-pumps" ? "#7ad0a8" : "#68b78f"}
+            opacity={0.9}
+            roughness={0.4}
+          />
+        </mesh>
+        <mesh position={[0.03, 0.16, 0.02]} castShadow>
+          <sphereGeometry args={[0.036, 16, 16]} />
+          <meshStandardMaterial color="#f4d25f" emissive="#f4c44f" emissiveIntensity={stepActive === "channels-pumps" ? 0.9 : 0.25} />
+        </mesh>
+      </group>
+
+      <group position={[0.5, -0.16, 0.16]}>
+        <mesh scale={[0.16, 0.16, 0.1]} castShadow receiveShadow>
+          <sphereGeometry args={[1, 32, 20]} />
+          <CellMaterial
+            id={trafficId}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+            color={stepActive === "vesicle-traffic" ? "#e5a15e" : "#d49057"}
+            opacity={0.72}
+            roughness={0.42}
+          />
+        </mesh>
+      </group>
+
+      <MembraneTransportParticles
+        activeProcessStepId={stepActive}
+        activeStructureId={activeStructureId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+    </group>
+  );
+}
+
+function getCellCycleAnchorId(cell: CellItem) {
+  if (cell.id === "bacteria") {
+    return "nucleoid";
+  }
+  return cell.organelles.some((organelle) => organelle.id === "nucleus") ? "nucleus" : cell.defaultOrganelle;
+}
+
+function getCellCyclePlacement(cell: CellItem) {
+  if (cell.id === "plant") {
+    return {
+      position: [0.76, 0.32, 0.5] as [number, number, number],
+      scale: 0.34,
+      rotation: [0.2, -0.2, -0.08] as [number, number, number],
+    };
+  }
+  if (cell.id === "whiteBlood") {
+    return {
+      position: [-0.18, 0.04, 0.48] as [number, number, number],
+      scale: 0.36,
+      rotation: [0.2, -0.18, -0.1] as [number, number, number],
+    };
+  }
+  if (cell.id === "epithelial") {
+    return {
+      position: [0.15, -0.2, 0.48] as [number, number, number],
+      scale: 0.38,
+      rotation: [0.18, -0.2, -0.08] as [number, number, number],
+    };
+  }
+  return {
+    position: [0.22, 0.18, 0.56] as [number, number, number],
+    scale: 0.4,
+    rotation: [0.22, -0.24, -0.12] as [number, number, number],
+  };
+}
+
+function ReplicatedChromosome({
+  position,
+  active,
+  anchorId,
+  activeOrganelle,
+  viewMode,
+}: {
+  position: [number, number, number];
+  active: boolean;
+  anchorId: string;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  return (
+    <group position={position} rotation={[0.18, 0.12, 0.18]}>
+      <CurveTube
+        id={anchorId}
+        color={active ? "#cda8ff" : "#9d7bd3"}
+        points={[
+          [-0.08, 0.18, 0.08],
+          [-0.02, 0.05, 0.12],
+          [0.04, -0.08, 0.1],
+          [0.09, -0.2, 0.08],
+        ]}
+        radius={active ? 0.026 : 0.018}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <CurveTube
+        id={anchorId}
+        color={active ? "#b992f2" : "#8664bd"}
+        points={[
+          [0.08, 0.18, 0.08],
+          [0.02, 0.05, 0.12],
+          [-0.04, -0.08, 0.1],
+          [-0.09, -0.2, 0.08],
+        ]}
+        radius={active ? 0.026 : 0.018}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <mesh position={[0, -0.02, 0.12]} castShadow>
+        <sphereGeometry args={[0.034, 16, 16]} />
+        <meshStandardMaterial color="#f3ce7b" emissive="#e6a846" emissiveIntensity={active ? 0.62 : 0.24} />
+      </mesh>
+    </group>
+  );
+}
+
+function CellCycleParticles({
+  activeProcessStepId,
+  anchorId,
+  activeOrganelle,
+  viewMode,
+}: {
+  activeProcessStepId?: string;
+  anchorId: string;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  const growthRef = useRef<Group | null>(null);
+  const replicationRef = useRef<Group | null>(null);
+  const mitosisRef = useRef<Group | null>(null);
+  const interphaseActive = activeProcessStepId === "interphase";
+  const replicationActive = activeProcessStepId === "dna-replication";
+  const mitosisActive = activeProcessStepId === "mitosis";
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    if (growthRef.current) {
+      growthRef.current.scale.setScalar(1 + Math.sin(time * 1.6) * 0.04);
+    }
+    if (replicationRef.current) {
+      replicationRef.current.position.x = Math.sin(time * 1.4) * 0.05;
+    }
+    if (mitosisRef.current) {
+      mitosisRef.current.rotation.z = Math.sin(time * 1.2) * 0.04;
+    }
+  });
+
+  return (
+    <>
+      <group ref={growthRef} visible={interphaseActive} position={[0, 0, 0.18]}>
+        {Array.from({ length: 9 }, (_, index) => {
+          const angle = (index / 9) * Math.PI * 2;
+          return (
+            <mesh key={index} position={[Math.cos(angle) * 0.3, Math.sin(angle) * 0.18, 0.02]} castShadow>
+              <sphereGeometry args={[0.022, 14, 14]} />
+              <meshStandardMaterial color="#b8e092" emissive="#82c96e" emissiveIntensity={0.55} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      <group ref={replicationRef} visible={replicationActive} position={[-0.12, 0.04, 0.2]}>
+        <CurveTube
+          id={anchorId}
+          color="#94d4ff"
+          points={[
+            [-0.34, 0.02, 0],
+            [-0.16, 0.08, 0.02],
+            [0.02, -0.04, 0.02],
+            [0.22, 0.06, 0],
+          ]}
+          radius={0.016}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+        <CurveTube
+          id={anchorId}
+          color="#d4a8ff"
+          points={[
+            [-0.3, -0.08, 0.02],
+            [-0.12, -0.02, 0.04],
+            [0.08, 0.08, 0.04],
+            [0.3, 0.02, 0.02],
+          ]}
+          radius={0.016}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+        />
+        {Array.from({ length: 6 }, (_, index) => (
+          <mesh key={index} position={[-0.24 + index * 0.1, Math.sin(index * 1.6) * 0.055, 0.08]} castShadow>
+            <boxGeometry args={[0.04, 0.018, 0.018]} />
+            <meshStandardMaterial color="#f1d577" emissive="#e9ba4f" emissiveIntensity={0.62} />
+          </mesh>
+        ))}
+      </group>
+
+      <group ref={mitosisRef} visible={mitosisActive} position={[0, 0, 0.22]}>
+        {[-0.52, 0.52].map((x) => (
+          <mesh key={x} position={[x, 0, 0]} castShadow>
+            <sphereGeometry args={[0.04, 16, 16]} />
+            <meshStandardMaterial color="#f4d36f" emissive="#f0b84f" emissiveIntensity={0.8} />
+          </mesh>
+        ))}
+        {[-0.16, 0, 0.16].map((y) => (
+          <CurveTube
+            key={y}
+            id={anchorId}
+            color="#9fd9ff"
+            points={[
+              [-0.52, 0, 0],
+              [-0.22, y * 0.7, 0.04],
+              [0.22, y * -0.7, 0.04],
+              [0.52, 0, 0],
+            ]}
+            radius={0.008}
+            activeOrganelle={activeOrganelle}
+            viewMode={viewMode}
+          />
+        ))}
+      </group>
+    </>
+  );
+}
+
+function SemanticCellCycleModel({
+  cell,
+  activeOrganelle,
+  viewMode,
+  crossSection,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+}: ProcessModelProps & {
+  cell: CellItem;
+}) {
+  const rootRef = useRef<Group | null>(null);
+  const processActive = activeProcessId === "cell-cycle";
+  const anchorId = getCellCycleAnchorId(cell);
+  const nucleusSelected = activeOrganelle === anchorId;
+  const stepActive = processActive ? activeProcessStepId || "interphase" : "interphase";
+  const visibleDetail = processActive || (nucleusSelected && viewMode === "focus");
+  const placement = getCellCyclePlacement(cell);
+
+  useFrame(({ clock }) => {
+    if (!rootRef.current) {
+      return;
+    }
+    const pulse =
+      processActive
+        ? 1 + Math.sin((clock.elapsedTime * (processSimulationRunning ? 1.45 : 0.5) + processSimulationProgress * 6.28) * 1.45) * 0.024
+        : 1;
+    rootRef.current.rotation.z = placement.rotation[2] + Math.sin(clock.elapsedTime * 0.54) * 0.024;
+    rootRef.current.scale.setScalar(placement.scale * pulse);
+  });
+
+  if (!visibleDetail) {
+    return null;
+  }
+
+  return (
+    <group
+      ref={rootRef}
+      name="semantic-cell-cycle-overlay"
+      position={placement.position}
+      rotation={placement.rotation}
+      scale={[placement.scale, placement.scale, placement.scale]}
+    >
+      <mesh scale={stepActive === "mitosis" ? [0.52, 0.28, 0.16] : [0.44, 0.34, 0.18]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 56, 28]} />
+        <CellMaterial
+          id={anchorId}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color={stepActive === "dna-replication" ? "#8162bd" : "#7150aa"}
+          opacity={crossSection || stepActive === "mitosis" ? 0.34 : 0.52}
+          roughness={0.42}
+        />
+      </mesh>
+
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[0.68, 0.48, 1]}>
+        <torusGeometry args={[0.62, 0.012, 10, 80]} />
+        <CellMaterial
+          id={anchorId}
+          activeOrganelle={activeOrganelle}
+          viewMode={viewMode}
+          color="#c8addf"
+          opacity={stepActive === "mitosis" ? 0.32 : 0.72}
+          roughness={0.44}
+        />
+      </mesh>
+
+      <CurveTube
+        id={anchorId}
+        color={stepActive === "dna-replication" ? "#94d4ff" : "#b595de"}
+        points={[
+          [-0.32, 0.08, 0.16],
+          [-0.12, -0.08, 0.18],
+          [0.12, 0.1, 0.18],
+          [0.34, -0.04, 0.16],
+        ]}
+        radius={stepActive === "interphase" ? 0.018 : 0.012}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+
+      <ReplicatedChromosome
+        position={[-0.16, 0.04, 0.22]}
+        active={stepActive === "dna-replication" || stepActive === "mitosis"}
+        anchorId={anchorId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+      <ReplicatedChromosome
+        position={[0.18, -0.04, 0.22]}
+        active={stepActive === "mitosis"}
+        anchorId={anchorId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+
+      {stepActive === "mitosis" && (
+        <>
+          <mesh position={[-0.42, 0, 0.06]} scale={[0.22, 0.28, 0.12]} castShadow receiveShadow>
+            <sphereGeometry args={[1, 32, 18]} />
+            <meshStandardMaterial color="#cdb7e8" transparent opacity={0.26} roughness={0.5} />
+          </mesh>
+          <mesh position={[0.42, 0, 0.06]} scale={[0.22, 0.28, 0.12]} castShadow receiveShadow>
+            <sphereGeometry args={[1, 32, 18]} />
+            <meshStandardMaterial color="#cdb7e8" transparent opacity={0.26} roughness={0.5} />
+          </mesh>
+          <mesh position={[0, 0, 0.12]} rotation={[0, 0, Math.PI / 2]}>
+            <torusGeometry args={[0.38, 0.008, 8, 72, Math.PI]} />
+            <meshStandardMaterial color="#d6a7ff" emissive="#b179e6" emissiveIntensity={0.45} transparent opacity={0.82} />
+          </mesh>
+        </>
+      )}
+
+      <CellCycleParticles
+        activeProcessStepId={stepActive}
+        anchorId={anchorId}
+        activeOrganelle={activeOrganelle}
+        viewMode={viewMode}
+      />
+    </group>
+  );
+}
+
+const organelleFocusTargets: Record<string, Record<string, [number, number, number]>> = {
+  plant: {
+    nucleus: [0.76, 0.32, 0.26],
+    chloroplast: [0.03, 0.08, 0.54],
+    mitochondrion: [0.42, -0.62, 0.48],
+    vacuole: [-0.44, -0.12, 0.22],
+    cellWall: [0, 0, 0.05],
+  },
+  whiteBlood: {
+    lysosome: [0.32, -0.16, 0.26],
+    nucleus: [-0.18, 0.04, 0.28],
+    granules: [0.05, 0.12, 0.18],
+  },
+  neuron: {
+    axon: [1.28, 0, 0.04],
+    soma: [-0.55, 0, 0.1],
+    dendrites: [-1.22, 0.36, 0.06],
+  },
+  epithelial: {
+    microvilli: [0, 0.88, 0.1],
+    junctions: [0.05, 0.7, 0.26],
+    nucleus: [0.15, -0.2, 0.24],
+  },
+  bacteria: {
+    nucleoid: [0, 0.02, 0.22],
+    cellWall: [0, 0, 0.04],
+    flagellum: [2.2, -0.48, 0.05],
+  },
+  animal: {
+    mitochondrion: [-0.36, 0.06, 0.52],
+    nucleus: [0.22, 0.18, 0.28],
+    ribosome: [0.18, -0.03, 0.58],
+    golgi: [0.1, -0.38, 0.32],
+    membrane: [0, 0, 0.06],
+  },
+  muscle: {
+    myofibril: [0.26, 0, 0.14],
+    sarcolemma: [0, 0, 0.04],
+    mitochondria: [-0.42, 0.32, 0.55],
+  },
+};
+
+function getOrganelleFocusTarget(cell: CellItem, activeOrganelle: string) {
+  return organelleFocusTargets[cell.id]?.[activeOrganelle] ?? [0, 0, 0.12];
+}
+
+function FocusCamera({
+  cell,
+  activeOrganelle,
+  viewMode,
+}: {
+  cell: CellItem;
+  activeOrganelle: string;
+  viewMode: ViewMode;
+}) {
+  const { camera } = useThree();
+  const controls = useThree(
+    (state) =>
+      state.controls as unknown as
+        | {
+            target: Vector3;
+            update: () => void;
+          }
+        | undefined,
+  );
+  const nativeMaterial = cell.modelAsset?.materialMode === "native";
+  const trueAssetDisplay = cell.id === "plant" || cell.id === "whiteBlood" || cell.id === "muscle";
+
+  useEffect(() => {
+    const target = getOrganelleFocusTarget(cell, activeOrganelle);
+    const baseZ = trueAssetDisplay ? 6.1 : 5.8;
+    const focusZ = nativeMaterial ? 4.75 : 4.45;
+    const nextZ = viewMode === "focus" ? focusZ : baseZ;
+    const nextY = trueAssetDisplay ? 0.1 : 0.2;
+    const perspectiveCamera = camera as typeof camera & { fov?: number };
+
+    camera.position.set(
+      viewMode === "focus" ? target[0] * 0.16 : 0,
+      viewMode === "focus" ? target[1] * 0.12 + nextY : nextY,
+      nextZ,
+    );
+
+    if (typeof perspectiveCamera.fov === "number") {
+      perspectiveCamera.fov = viewMode === "focus" ? (trueAssetDisplay ? 27 : 31) : trueAssetDisplay ? 33 : 38;
+    }
+
+    const nextTarget: [number, number, number] = viewMode === "focus" ? target : [0, 0, 0];
+    controls?.target.set(nextTarget[0], nextTarget[1], nextTarget[2]);
+    controls?.update();
+    camera.updateProjectionMatrix();
+  }, [activeOrganelle, camera, cell, controls, nativeMaterial, trueAssetDisplay, viewMode]);
+
+  return null;
+}
+
 function CellModel({
   cell,
   activeOrganelle,
   viewMode,
   crossSection,
   autoRotate,
+  activeProcessId,
+  activeProcessStepId,
+  processSimulationProgress,
+  processSimulationRunning,
   modelRootRef,
 }: Omit<CellSceneProps, "resetKey"> & {
   modelRootRef: RefObject<Group | null>;
 }) {
   useFrame((_, delta) => {
-    if (modelRootRef.current && autoRotate) {
-      modelRootRef.current.rotation.y += delta * 0.1;
+    if (!modelRootRef.current) {
+      return;
     }
+
+    if (!autoRotate || cell.id === "plant") {
+      return;
+    }
+
+    modelRootRef.current.rotation.y += delta * 0.1;
   });
 
   const common = { activeOrganelle, viewMode, crossSection };
+  const processCommon = { ...common, activeProcessId, activeProcessStepId, processSimulationProgress, processSimulationRunning };
 
   return (
     <group ref={modelRootRef} position={[0, 0, 0]}>
       {cell.modelAsset ? (
-        <AssetCellModel cell={cell} asset={cell.modelAsset} {...common} />
+        <>
+          <AssetCellModel cell={cell} asset={cell.modelAsset} {...common} />
+          {cell.id === "plant" && <SemanticChloroplastModel {...processCommon} />}
+          {(cell.id === "plant" || cell.id === "animal" || cell.id === "muscle") && (
+            <SemanticMitochondrionModel cell={cell} {...processCommon} />
+          )}
+          <SemanticProteinBiosynthesisModel cell={cell} {...processCommon} />
+          <SemanticMembraneTransportModel cell={cell} {...processCommon} />
+          <SemanticCellCycleModel cell={cell} {...processCommon} />
+        </>
       ) : (
         <>
           {cell.modelKind === "plant" && <PlantModel {...common} />}
@@ -1414,6 +2932,13 @@ function CellModel({
           {cell.modelKind === "bacteria" && <BacteriaModel {...common} />}
           {cell.modelKind === "animal" && <AnimalModel {...common} />}
           {cell.modelKind === "muscle" && <MuscleModel {...common} />}
+          {cell.modelKind === "plant" && <SemanticChloroplastModel {...processCommon} />}
+          {(cell.modelKind === "plant" || cell.modelKind === "animal" || cell.modelKind === "muscle") && (
+            <SemanticMitochondrionModel cell={cell} {...processCommon} />
+          )}
+          <SemanticProteinBiosynthesisModel cell={cell} {...processCommon} />
+          <SemanticMembraneTransportModel cell={cell} {...processCommon} />
+          <SemanticCellCycleModel cell={cell} {...processCommon} />
         </>
       )}
     </group>
@@ -1476,8 +3001,8 @@ function SceneExportBridge({
 
 function TrueAssetPostProcessing({ cell }: { cell: CellItem }) {
   const { gl, scene, camera, size, viewport } = useThree();
-  const sharpenStrength = cell.id === "plant" ? 0.145 : 0.105;
-  const ssaoRadius = cell.id === "plant" ? 0.052 : 0.042;
+  const sharpenStrength = cell.id === "plant" ? 0.112 : 0.105;
+  const ssaoRadius = cell.id === "plant" ? 0.032 : 0.042;
 
   const { composer, ssaoPass, sharpenPass } = useMemo(() => {
     const composerInstance = new EffectComposer(gl);
@@ -1486,11 +3011,11 @@ function TrueAssetPostProcessing({ cell }: { cell: CellItem }) {
     ssao.output = SSAOPass.OUTPUT.Default;
     ssao.kernelRadius = ssaoRadius;
     ssao.minDistance = 0.003;
-    ssao.maxDistance = cell.id === "plant" ? 0.18 : 0.13;
+    ssao.maxDistance = cell.id === "plant" ? 0.11 : 0.13;
 
     const sharpen = new ShaderPass(sharpenShader);
     sharpen.uniforms.strength.value = sharpenStrength;
-    sharpen.uniforms.contrast.value = cell.id === "plant" ? 1.04 : 1.025;
+    sharpen.uniforms.contrast.value = cell.id === "plant" ? 1.018 : 1.025;
 
     composerInstance.addPass(renderPass);
     composerInstance.addPass(ssao);
@@ -1544,17 +3069,24 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
   viewMode,
   crossSection,
   autoRotate,
+  renderQuality = "balanced",
+  processSimulationProgress = 0,
+  processSimulationRunning = false,
+  activeProcessId,
+  activeProcessStepId,
+  onAutoRotateChange,
   resetKey,
 }: CellSceneProps, ref) {
   const nativeMaterial = cell.modelAsset?.materialMode === "native";
-  const trueAssetDisplay = cell.id === "plant" || cell.id === "whiteBlood";
+  const trueAssetDisplay = cell.id === "plant" || cell.id === "whiteBlood" || cell.id === "muscle";
   const modelRootRef = useRef<Group | null>(null);
+  const highQuality = renderQuality === "high";
 
   return (
     <Canvas
       key={resetKey}
       className={`cell-canvas${nativeMaterial ? " is-native-asset" : ""}`}
-      dpr={[1, 2]}
+      dpr={highQuality ? [1, 2] : [1, 1.35]}
       shadows
       gl={{ antialias: true, alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true }}
       onCreated={({ gl }) => {
@@ -1569,10 +3101,11 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
       }}
     >
       <SceneExportBridge apiRef={ref} modelRootRef={modelRootRef} />
-      {trueAssetDisplay && <TrueAssetPostProcessing cell={cell} />}
+      <FocusCamera cell={cell} activeOrganelle={activeOrganelle} viewMode={viewMode} />
+      {trueAssetDisplay && highQuality && <TrueAssetPostProcessing cell={cell} />}
       {!nativeMaterial && <color attach="background" args={["#fbf7ee"]} />}
       {!nativeMaterial && <fog attach="fog" args={["#fbf7ee", 7.6, 12.8]} />}
-      <Environment frames={1} resolution={256}>
+      <Environment frames={1} resolution={highQuality ? 256 : 128}>
         <Lightformer
           form="rect"
           intensity={cell.id === "whiteBlood" ? 3.7 : cell.id === "plant" ? 3.15 : nativeMaterial ? 3.3 : 3}
@@ -1608,8 +3141,8 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
         position={[4.2, 5.2, 5.8]}
         intensity={cell.id === "whiteBlood" ? 2.38 : cell.id === "plant" ? 2.06 : nativeMaterial ? 2.24 : 2.16}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={highQuality ? 2048 : 1024}
+        shadow-mapSize-height={highQuality ? 2048 : 1024}
         shadow-bias={-0.00025}
       />
       {nativeMaterial && (
@@ -1628,6 +3161,7 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
             intensity={0.46}
             color="#ffe4b8"
           />
+          <directionalLight position={[0.3, 1.1, 5.4]} intensity={0.62} color="#fff9ed" />
           <pointLight position={[2.6, 0.3, -2.1]} intensity={0.34} color="#b6d889" />
         </>
       )}
@@ -1657,13 +3191,21 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
         color={nativeMaterial ? "#ffffff" : cell.accent}
       />
       <Suspense fallback={<ModelLoadingOverlay cell={cell} />}>
-        <Float speed={1.25} rotationIntensity={0.08} floatIntensity={0.18}>
+        <Float
+          speed={cell.id === "plant" ? 0 : 1.25}
+          rotationIntensity={cell.id === "plant" ? 0 : 0.08}
+          floatIntensity={cell.id === "plant" ? 0 : 0.18}
+        >
           <CellModel
             cell={cell}
             activeOrganelle={activeOrganelle}
             viewMode={viewMode}
             crossSection={crossSection}
             autoRotate={autoRotate}
+            activeProcessId={activeProcessId}
+            activeProcessStepId={activeProcessStepId}
+            processSimulationProgress={processSimulationProgress}
+            processSimulationRunning={processSimulationRunning}
             modelRootRef={modelRootRef}
           />
         </Float>
@@ -1682,6 +3224,7 @@ export const CellScene = forwardRef<CellSceneHandle, CellSceneProps>(function Ce
         enablePan
         minDistance={3.2}
         maxDistance={8.4}
+        onStart={() => onAutoRotateChange?.(false)}
       />
     </Canvas>
   );
