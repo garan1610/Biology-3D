@@ -117,7 +117,25 @@ Transparent PNG references in `public/cell-renders-transparent/` are used for th
 
 ## Verification
 
-`npm run verify` launches the local app, captures desktop, compact, mobile, and interaction screenshots, then checks canvas pixel metrics to catch blank renders or major layout regressions.
+`npm run verify` expects the local app to already be running, captures desktop, compact, mobile, and interaction screenshots, then checks canvas pixel metrics to catch blank renders or major layout regressions.
+
+Start the app before running visual verification:
+
+```bash
+npm run dev
+```
+
+By default, verification opens `http://127.0.0.1:5173/`. If Vite uses another port, pass the app URL explicitly:
+
+```bash
+APP_URL=http://127.0.0.1:5174/ npm run verify
+```
+
+The script uses Google Chrome through Playwright Core. If Chrome is installed in a non-default location, pass the executable path:
+
+```bash
+CHROME_PATH="/path/to/Google Chrome" npm run verify
+```
 
 Current coverage includes:
 
